@@ -34,23 +34,126 @@ function fmt(ms) {
 
 // ---- rendering ------------------------------------------------------------
 
+// Planned order of the cases: the player can drag them before the attack starts.
+// (The sandbox has no storage, so it lasts until the plugin is closed.)
+let order = [...PLL_NAMES];
+const canReorder = () => attack.phase === "waiting" || attack.phase === "armed";
+
+function pendingRow(name, reorder) {
+  const tr = document.createElement("tr");
+  tr.className = "pending";
+  tr.dataset.name = name;
+  const handle = reorder ? `<button class="handle" aria-label="Move ${name}" title="Drag to reorder">⠿</button>` : "";
+  tr.innerHTML = `<td class="handle-cell">${handle}</td><td class="pic">${PLL_DIAGRAMS[name]}</td><td class="name">${name}</td><td class="time">–</td><td class="time">–</td>`;
+  return tr;
+}
+
+function doneRow(r, i) {
+  const tr = document.createElement("tr");
+  if (r.name === latest) tr.className = "latest";
+  tr.innerHTML = `<td class="idx">${i + 1}</td><td class="name" colspan="2">${r.name}</td><td class="time">${fmt(r.caseTime)}</td><td class="time">${fmt(r.split)}</td>`;
+  return tr;
+}
+
+// Cases still to do on top (with their picture), then the done ones, most
+// recent first: the first PLL done ends up at the bottom.
 function renderTable() {
-  const rows = attack.results.map((r, i) => {
-    const tr = document.createElement("tr");
-    if (r.name === latest) tr.className = "latest";
-    tr.innerHTML = `<td>${i + 1}</td><td class="pic">${PLL_DIAGRAMS[r.name]}</td><td>${r.name}</td><td>${fmt(r.caseTime)}</td><td>${fmt(r.split)}</td>`;
-    return tr;
-  });
-  for (const name of PLL_NAMES) {
-    if (attack.isDone(name)) continue;
-    const tr = document.createElement("tr");
-    tr.className = "pending";
-    tr.innerHTML = `<td></td><td class="pic">${PLL_DIAGRAMS[name]}</td><td>${name}</td><td>–</td><td>–</td>`;
-    rows.push(tr);
-  }
-  $("rows").replaceChildren(...rows);
+  endDrag(false);
+  const reorder = canReorder();
+  const pending = order.filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
+  const done = attack.results.map(doneRow).reverse();
+  $("rows").replaceChildren(...pending, ...done);
+  $("plan-hint").hidden = !reorder;
   $("progress").textContent = `${attack.results.length} / ${PLL_NAMES.length}`;
 }
+
+// ---- reordering (pointer drag, works with mouse and touch) -----------------
+
+let drag = null; // { row, y, frame }
+
+function pendingRows() {
+  return [...$("rows").querySelectorAll("tr.pending")];
+}
+
+function placeDraggedRow(y) {
+  const others = pendingRows().filter((r) => r !== drag.row);
+  const before = others.find((r) => {
+    const box = r.getBoundingClientRect();
+    return y < box.top + box.height / 2;
+  });
+  if (before) {
+    if (drag.row.nextSibling !== before) $("rows").insertBefore(drag.row, before);
+  } else if (others.length) {
+    others[others.length - 1].after(drag.row);
+  }
+}
+
+// Scroll the list (or the page on narrow screens) when dragging near an edge.
+function autoScroll() {
+  if (!drag) return;
+  const box = document.querySelector(".table");
+  const scrollsItself = box.scrollHeight > box.clientHeight;
+  // The sticky header covers the top of the list: the scroll-up zone starts below it.
+  const headerBottom = box.querySelector("th").getBoundingClientRect().bottom; // th is the sticky part
+  const top = scrollsItself ? headerBottom : 0;
+  const bottom = scrollsItself ? box.getBoundingClientRect().bottom : window.innerHeight;
+  const edge = 56;
+  let speed = 0;
+  if (drag.y < top + edge) speed = -Math.max(4, (top + edge - drag.y) / 2);
+  else if (drag.y > bottom - edge) speed = Math.max(4, (drag.y - bottom + edge) / 2);
+  if (speed) {
+    if (scrollsItself) box.scrollTop += speed;
+    else window.scrollBy(0, speed);
+    placeDraggedRow(drag.y);
+  }
+  drag.frame = requestAnimationFrame(autoScroll);
+}
+
+function endDrag(commit) {
+  if (!drag) return;
+  cancelAnimationFrame(drag.frame);
+  drag.row.classList.remove("dragging");
+  document.body.classList.remove("reordering");
+  drag = null;
+  if (commit) {
+    const planned = pendingRows().map((r) => r.dataset.name);
+    order = [...planned, ...order.filter((name) => !planned.includes(name))];
+  }
+}
+
+// The tbody keeps the pointer capture: the dragged row itself moves in the DOM.
+$("rows").addEventListener("pointerdown", (e) => {
+  const handle = e.target.closest(".handle");
+  if (!handle || !canReorder() || e.button > 0) return;
+  e.preventDefault();
+  const row = handle.closest("tr");
+  drag = { row, y: e.clientY, frame: 0 };
+  row.classList.add("dragging");
+  document.body.classList.add("reordering");
+  $("rows").setPointerCapture(e.pointerId);
+  drag.frame = requestAnimationFrame(autoScroll);
+});
+$("rows").addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  drag.y = e.clientY;
+  placeDraggedRow(e.clientY);
+});
+$("rows").addEventListener("pointerup", () => endDrag(true));
+$("rows").addEventListener("pointercancel", () => endDrag(true));
+
+// Keyboard: focus a handle, then arrow up / down.
+$("rows").addEventListener("keydown", (e) => {
+  const handle = e.target.closest(".handle");
+  if (!handle || !canReorder() || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+  e.preventDefault();
+  const name = handle.closest("tr").dataset.name;
+  const i = order.indexOf(name);
+  const j = e.key === "ArrowUp" ? i - 1 : i + 1;
+  if (j < 0 || j >= order.length) return;
+  [order[i], order[j]] = [order[j], order[i]];
+  renderTable();
+  $("rows").querySelector(`tr[data-name="${name}"] .handle`).focus();
+});
 
 function defaultStatus() {
   switch (attack.phase) {
@@ -121,6 +224,7 @@ function handleMove(move, now = performance.now()) {
   queueMicrotask(() => (pendingMove = null)); // no state followed: don't animate it later
   if (attack.start(now)) {
     status = { text: "", warn: false };
+    renderTable(); // drag handles go away once the attack has started
     renderStatus();
     requestAnimationFrame(tick);
   }

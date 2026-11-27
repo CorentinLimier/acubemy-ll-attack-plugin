@@ -1,9 +1,15 @@
 # PLL Attack — acubemy plugin
 
 Do all 21 PLLs, in any order, on a smart cube. Each PLL is recognised automatically
-and timed; the table on the right lists them in the order you did them, with the
-time of the case and the running total. Each row shows a picture of the case
-(yellow face and the top row of the sides, arrows where the pieces go).
+and timed.
+
+The table on the right lists the cases still to do on top, each with a picture
+(yellow face and the top row of the sides, as you hold the cube). Before the
+attack starts you can drag them (⠿) into the order you plan to do them in.
+Done cases move below, without their picture, with the time of the case and the
+running total; the first one done is at the bottom, so the full table fits on
+screen at the end. The order is kept until the plugin is closed (plugins have
+no storage).
 
 ## How it works
 
@@ -25,7 +31,7 @@ time of the case and the running total. Each row shows a picture of the case
 | --- | --- |
 | `cube.js` | Facelet model of the cube (acubemy/Kociemba frame) |
 | `pll.js` | The 21 cases and the PLL recognition |
-| `diagram.js` | Top-view picture of each case (yellow face + side stickers, arrows) |
+| `diagram.js` | Top-view picture of each case (yellow face + side stickers) |
 | `attack.js` | Attack state machine: timer, splits, results |
 | `main.js`, `view.js`, `index.html`, `style.css` | UI, 3D cube (Three.js) |
 | `tests/` | `npm test` (Node 20+) |
