@@ -84,6 +84,27 @@ test("restart", () => {
   assert.equal(attack.phase, "waiting");
 });
 
+test("a scrambled state before the start disarms the attack", () => {
+  // The plugin can open on the SDK's default solved cube, then get acubemy's real state.
+  const attack = new PllAttack(SOLVED);
+  assert.equal(attack.phase, "armed");
+  attack.update(applyAlg(SOLVED, "R U F"), 0);
+  assert.equal(attack.phase, "waiting");
+  assert.equal(attack.start(10), false); // turning a scrambled cube doesn't start the timer
+  const tPerm = applyAlg(SOLVED, toHostFrame(ALGS.find((p) => p.name === "T").alg));
+  assert.equal(attack.update(tPerm, 20), null); // reaching a PLL state arms, nothing is counted
+  assert.equal(attack.phase, "armed");
+  assert.deepEqual(attack.results, []);
+});
+
+test("a scrambled state during the attack keeps it running", () => {
+  const attack = new PllAttack(SOLVED);
+  attack.start(0);
+  attack.update(applyAlg(SOLVED, "R"), 0); // in the middle of an alg
+  assert.equal(attack.phase, "running");
+  assert.equal(attack.baseline, SOLVED);
+});
+
 test("state-driven: start() on the move, update() with acubemy's facelets", () => {
   const attack = new PllAttack(SOLVED);
   assert.equal(attack.start(500), true);

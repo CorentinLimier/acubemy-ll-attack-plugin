@@ -50,7 +50,13 @@ export class PllAttack {
    */
   update(facelets, now) {
     this.facelets = facelets;
-    if (this.phase === "finished" || !isPllState(facelets)) return null;
+    if (this.phase === "finished") return null;
+    if (!isPllState(facelets)) {
+      // Not started yet (e.g. the plugin opened on the SDK's default solved
+      // cube, then acubemy's real state arrived): wait for a PLL state again.
+      if (this.startTime === null) this.baseline = null;
+      return null;
+    }
 
     const before = this.baseline;
     this.baseline = facelets;
