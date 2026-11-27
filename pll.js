@@ -38,18 +38,10 @@ export function toHostFrame(alg) {
   return alg.replace(/[URFDLB]/g, (f) => Z2[f]);
 }
 
-// Facelet indices of the 12 ring positions, in the order of PLL_CASES.
-// Player coordinates (x', z') are acubemy's (-x, z).
-const RING = [
-  ...[-1, 0, 1].map((x) => [x, -1, 0, -1]), // back
-  ...[-1, 0, 1].map((z) => [1, z, 1, 0]), // right
-  ...[1, 0, -1].map((x) => [x, 1, 0, 1]), // front
-  ...[1, 0, -1].map((z) => [-1, z, -1, 0]), // left
-].map(([x, z, nx, nz]) =>
-  STICKERS.findIndex(
-    (s) => s.pos[0] === -x && s.pos[1] === -1 && s.pos[2] === z && s.normal[0] === -nx && s.normal[1] === 0 && s.normal[2] === nz
-  )
-);
+// Facelet indices of the 12 ring positions, in the order of PLL_CASES: the
+// player's top row of the back, right, front and left faces is the bottom row
+// of acubemy's B, L, F and R faces.
+const RING = [51, 52, 53, 42, 43, 44, 24, 25, 26, 15, 16, 17];
 const COLOUR_TO_FACE = { G: "F", O: "L", B: "B", R: "R" };
 
 /** acubemy facelets of a case: solved cube with the case's last layer. */
