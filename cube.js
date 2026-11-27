@@ -115,6 +115,20 @@ export const LAST_LAYER_RING = [51, 52, 53, 42, 43, 44, 24, 25, 26, 15, 16, 17];
 // from the back-left (z2: the player's top-left-back is acubemy's D sticker 35).
 export const LAST_LAYER_TOP = [35, 34, 33, 32, 31, 30, 29, 28, 27];
 
+/** The player's U turns (AUF): turns of acubemy's D face. */
+export const AUFS = ["", "D", "D2", "D'"];
+
+/** Case patterns are written with spaces for reading: drop them. */
+export const readPatterns = (table) =>
+  Object.fromEntries(Object.entries(table).map(([name, pattern]) => [name, pattern.replace(/ /g, "")]));
+
+/** A solved cube whose `stickers` are set from `pattern`, one character each, through `letter`. */
+export function patternFacelets(pattern, stickers, letter) {
+  const out = SOLVED.split("");
+  stickers.forEach((index, k) => (out[index] = letter(pattern[k])));
+  return out.join("");
+}
+
 function solvedExcept(facelets, free) {
   for (let i = 0; i < 54; i++) {
     if (!free.has(i) && facelets[i] !== SOLVED[i]) return false;

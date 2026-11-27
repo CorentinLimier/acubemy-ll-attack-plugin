@@ -1,11 +1,11 @@
-import { LAST_LAYER_RING, SOLVED, algPermutation, applyPermutation, compose, solvingPermutation } from "./cube.js";
+import { AUFS, LAST_LAYER_RING, algPermutation, applyPermutation, compose, patternFacelets, readPatterns, solvingPermutation } from "./cube.js";
 
 // Each case as the player sees it from above, yellow on top and green in
 // front: the top row of the four side faces, read clockwise: back (left to
 // right), right (back to front), front (right to left), left (front to back).
 // G green, O orange, B blue, R red. Solved is "BBB OOO GGG RRR".
 // A case is a cube state, so it doesn't depend on the alg used to solve it.
-export const PLL_CASES = {
+export const PLL_CASES = readPatterns({
   Aa: "OBO GOR BGG RRB",
   Ab: "GBR BOB OGG RRO",
   E: "RBO GOB OGR BRG",
@@ -27,7 +27,7 @@ export const PLL_CASES = {
   V: "GOB OBR BGG RRO",
   Y: "GRB OOR BGG RBO",
   Z: "BOB OBO GRG RGR",
-};
+});
 
 export const PLL_NAMES = Object.keys(PLL_CASES);
 
@@ -35,14 +35,9 @@ export const PLL_NAMES = Object.keys(PLL_CASES);
 export const COLOUR_TO_FACE = { G: "F", O: "L", B: "B", R: "R" };
 
 /** acubemy facelets of a case: solved cube with the case's last layer. */
-export function caseFacelets(name) {
-  const colours = PLL_CASES[name].replace(/ /g, "");
-  const out = SOLVED.split("");
-  LAST_LAYER_RING.forEach((index, k) => (out[index] = COLOUR_TO_FACE[colours[k]]));
-  return out.join("");
-}
+export const caseFacelets = (name) => patternFacelets(PLL_CASES[name], LAST_LAYER_RING, (c) => COLOUR_TO_FACE[c]);
 
-const AUF = ["", "D", "D2", "D'"].map((a) => algPermutation(a)); // the player's U turns
+const AUF = AUFS.map(algPermutation);
 
 const CASE_PERMUTATIONS = PLL_NAMES.map((name) => {
   const solve = solvingPermutation(caseFacelets(name));

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { SOLVED, applyAlg, applyMove, toHostFrame } from "../cube.js";
-import { OLL_ALGS, PLL_ALGS as ALGS, faceTurns } from "./algs.mjs";
+import { OLL_ALGS, PLL_ALGS as ALGS, alg, faceTurns } from "./algs.mjs";
 import { Attack, MODES, isResetGesture } from "../attack.js";
 
 // What acubemy sends: quarter turns only, so "R2" arrives as "R R".
@@ -85,7 +85,7 @@ test("waits for a PLL state before arming, timer starts on the move after", () =
 test("restart", () => {
   const attack = new Attack(MODES.PLL, SOLVED);
   const clock = { t: 0 };
-  play(attack, ALGS[0].alg, clock);
+  play(attack, alg("Aa"), clock);
   assert.equal(attack.results.length, 1);
   attack.restart();
   assert.equal(attack.results.length, 0);
@@ -109,7 +109,7 @@ test("restart(facelets) takes acubemy's real state when it arrives", () => {
   attack.restart(applyAlg(SOLVED, "R U F"));
   assert.equal(attack.phase, "waiting");
   assert.equal(attack.start(10), false); // turning a scrambled cube doesn't start the timer
-  const tPerm = applyAlg(SOLVED, toHostFrame(ALGS.find((p) => p.name === "T").alg));
+  const tPerm = applyAlg(SOLVED, toHostFrame(alg("T")));
   assert.equal(attack.update(tPerm, 20), null); // reaching a PLL state arms, nothing is counted
   assert.equal(attack.phase, "armed");
   assert.deepEqual(attack.results, []);
@@ -127,7 +127,7 @@ test("state-driven: start() on the move, update() with acubemy's facelets", () =
   const attack = new Attack(MODES.PLL, SOLVED);
   assert.equal(attack.start(500), true);
   assert.equal(attack.start(600), false);
-  const t = applyAlg(SOLVED, toHostFrame(ALGS.find((p) => p.name === "T").alg));
+  const t = applyAlg(SOLVED, toHostFrame(alg("T")));
   assert.deepEqual(attack.update(t, 2500), { type: "case", result: { name: "T", caseTime: 2000, split: 2000 } });
 });
 
@@ -183,7 +183,7 @@ test("OLL attack: an alg that solves F2L halfway counts as one case when done in
 
 test("OLL attack: one case or two? The earliest case of the planned order wins", () => {
   // OLL 18 is OLL 7, U2, OLL 8: F2L is solved after OLL 7.
-  const fused = `${OLL_ALGS[6].alg} U2 ${OLL_ALGS[7].alg}`;
+  const fused = `${alg("7")} U2 ${alg("8")}`;
   const run = (order) => {
     const attack = new Attack(MODES.OLL, SOLVED);
     attack.order = [...order, ...MODES.OLL.names.filter((n) => !order.includes(n))];
@@ -202,10 +202,23 @@ test("OLL attack: one case or two? The earliest case of the planned order wins",
   const attack = new Attack(MODES.OLL, SOLVED);
   attack.order = ["7", "18", "8", ...MODES.OLL.names.filter((n) => !["7", "8", "18"].includes(n))];
   const clock = { t: 0 };
-  play(attack, OLL_ALGS[6].alg, clock);
+  play(attack, alg("7"), clock);
   clock.t += 2000;
   play(attack, fused, clock);
   assert.deepEqual(attack.results.map((r) => r.name), ["7", "18"]);
+});
+
+test("OLL attack: a PLL or an AUF right after a case ends its alg: no merge with the next case", () => {
+  for (const between of ["R U R' U' R' F R2 U' R' U' R U R' F'", "R U R' U' U R U' R'"]) {
+    const attack = new Attack(MODES.OLL, SOLVED);
+    attack.order = ["41", ...MODES.OLL.names.filter((n) => n !== "41")]; // so a merge would win
+    const clock = { t: 0 };
+    play(attack, alg("27"), clock); // Sune
+    play(attack, between, clock); // right after: a T perm, or a sexy move undone
+    clock.t += 2000;
+    play(attack, alg("45"), clock); // Sune + OLL 45 would be OLL 41
+    assert.deepEqual(attack.results.map((r) => r.name), ["27", "45"], between);
+  }
 });
 
 test("the planned order is kept for each attack, across restarts", () => {
@@ -220,14 +233,14 @@ test("the planned order is kept for each attack, across restarts", () => {
 test("PLL attack: two PLLs in a row are never merged", () => {
   const attack = new Attack(MODES.PLL, SOLVED);
   const clock = { t: 0 };
-  play(attack, ALGS.find((p) => p.name === "T").alg, clock);
-  play(attack, ALGS.find((p) => p.name === "Ua").alg, clock);
+  play(attack, alg("T"), clock);
+  play(attack, alg("Ua"), clock);
   assert.deepEqual(attack.results.map((r) => r.name), ["T", "Ua"]);
 });
 
 test("restart can switch to the other attack, even while one is running", () => {
   const attack = new Attack(MODES.PLL, SOLVED);
-  play(attack, ALGS[0].alg, { t: 0 });
+  play(attack, alg("Aa"), { t: 0 });
   attack.restart(attack.facelets, MODES.OLL);
   assert.equal(attack.mode, MODES.OLL);
   assert.equal(attack.phase, "armed"); // in the middle of the PLL attack: the timer is reset too

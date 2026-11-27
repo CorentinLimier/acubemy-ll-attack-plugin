@@ -31,14 +31,8 @@ function fmt(ms) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}.${frac}`;
 }
 
-// How a case is named over the cube and in messages: "T", "OLL 27".
-const label = (name) => (attack.mode === MODES.OLL ? `OLL ${name}` : name);
-
 // ---- rendering ------------------------------------------------------------
 
-// The planned order of the cases (attack.order, one for each attack): the
-// player can drag them before the attack starts. (The sandbox has no storage,
-// so it lasts until the plugin is closed.)
 let sortable = null; // SortableJS instance, once loaded
 const canReorder = () => sortable !== null && (attack.phase === "waiting" || attack.phase === "armed");
 
@@ -51,7 +45,7 @@ function pendingRow(name, reorder) {
   return tr;
 }
 
-let flashLatest = false; // flash the latest row once, when its PLL is solved (not on re-sorts)
+let flashLatest = false; // flash the latest row once, when its case is solved (not on re-sorts)
 
 function doneRow(r, i) {
   const tr = document.createElement("tr");
@@ -145,7 +139,7 @@ $("rows").addEventListener("keydown", (e) => {
 
 function defaultStatus() {
   switch (attack.phase) {
-    case "waiting": return { text: `Solve ${attack.mode.baseline}, or reset the cube state in acubemy`, warn: true };
+    case "waiting": return { text: `Solve ${attack.mode.solveFirst}, or reset the cube state in acubemy`, warn: true };
     case "armed": return { text: "Ready: the timer starts at your first move", warn: false };
     case "finished": return { text: `All ${attack.mode.names.length} ${attack.mode.title}s in ${fmt(attack.elapsed())}`, warn: false };
     default: return { text: "Go!", warn: false };
@@ -163,11 +157,25 @@ function renderTimer() {
   $("timer").className = attack.phase === "finished" ? "finished" : "";
 }
 
-// Tabs: which attack to do. Switching restarts, even during an attack.
+// Tabs: which attack to do, one per entry of MODES. Switching restarts, even
+// during an attack.
+const tabs = new Map(
+  Object.values(MODES).map((mode) => {
+    const tab = document.createElement("button");
+    tab.setAttribute("role", "tab");
+    tab.textContent = mode.title;
+    tab.addEventListener("click", () => {
+      if (mode === attack.mode) return;
+      restart(mode);
+      $("rows").closest(".table").scrollTop = 0;
+    });
+    return [mode, tab];
+  })
+);
+$("tabs").replaceChildren(...tabs.values());
+
 function renderTabs() {
-  for (const tab of document.querySelectorAll("[role=tab]")) {
-    tab.setAttribute("aria-selected", String(MODES[tab.dataset.mode] === attack.mode));
-  }
+  for (const [mode, tab] of tabs) tab.setAttribute("aria-selected", String(mode === attack.mode));
 }
 
 function renderAll() {
@@ -223,10 +231,10 @@ function handleEvent(event) {
     status = { text: "", warn: false }; // the celebration shows the case and its time
     flashLatest = true;
     renderTable();
-    if (event.type === "case") celebrate(label(event.result.name), fmt(event.result.caseTime), 14);
+    if (event.type === "case") celebrate(attack.mode.label(event.result.name), fmt(event.result.caseTime), 14);
     else celebrate(`All ${attack.mode.names.length}!`, fmt(event.result.split), 36, true);
   }
-  if (event?.type === "repeat") status = { text: `${label(event.name)} already done, it doesn't count`, warn: true };
+  if (event?.type === "repeat") status = { text: `${attack.mode.label(event.name)} already done, it doesn't count`, warn: true };
   renderStatus();
   renderTimer();
 }
@@ -293,13 +301,6 @@ function restart(mode = attack.mode) {
 }
 
 $("restart").addEventListener("click", () => restart());
-
-document.querySelector("[role=tablist]").addEventListener("click", (e) => {
-  const tab = e.target.closest("[role=tab]");
-  if (!tab || MODES[tab.dataset.mode] === attack.mode) return;
-  restart(MODES[tab.dataset.mode]);
-  $("rows").closest(".table").scrollTop = 0;
-});
 
 renderDevice();
 renderAll();

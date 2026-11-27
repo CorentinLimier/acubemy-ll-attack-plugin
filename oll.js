@@ -1,4 +1,4 @@
-import { LAST_LAYER_RING, LAST_LAYER_TOP, SOLVED, applyMove, applyPermutation, inverse, solvingPermutation } from "./cube.js";
+import { AUFS, LAST_LAYER_RING, LAST_LAYER_TOP, SOLVED, applyAlg, applyPermutation, compose, inverse, patternFacelets, readPatterns, solvingPermutation } from "./cube.js";
 
 // Each case as the player sees it from above, yellow on top and green in
 // front: which last-layer stickers are yellow (x) or not (.). First the 3 rows
@@ -6,7 +6,7 @@ import { LAST_LAYER_RING, LAST_LAYER_TOP, SOLVED, applyMove, applyPermutation, i
 // the order of the PLL patterns: back (left to right), right (back to front),
 // front (right to left), left (front to back).
 // A case is an orientation of the last layer, so it doesn't depend on the alg.
-export const OLL_CASES = {
+export const OLL_CASES = readPatterns({
   1: "... .x. ... .x. xxx .x. xxx",
   2: "... .x. ... .xx .x. xx. xxx",
   3: "... .x. ..x xx. xx. .x. xx.",
@@ -64,7 +64,7 @@ export const OLL_CASES = {
   55: "... xxx ... xxx ... xxx ...",
   56: "... xxx ... .x. x.x .x. x.x",
   57: "x.x xxx x.x .x. ... .x. ...",
-};
+});
 
 export const OLL_NAMES = Object.keys(OLL_CASES);
 
@@ -75,14 +75,8 @@ export const yellowMask = (facelets) => MASK_STICKERS.map((i) => (facelets[i] ==
 // Each case in the 4 ways it can be held (pre-AUF), by yellow mask.
 const CASE_BY_MASK = new Map();
 for (const name of OLL_NAMES) {
-  const pattern = OLL_CASES[name].replace(/ /g, "");
-  const out = SOLVED.split("");
-  MASK_STICKERS.forEach((index, k) => (out[index] = pattern[k] === "x" ? "D" : "-"));
-  let facelets = out.join("");
-  for (let k = 0; k < 4; k++) {
-    CASE_BY_MASK.set(yellowMask(facelets), name);
-    facelets = applyMove(facelets, "D");
-  }
+  const facelets = patternFacelets(OLL_CASES[name], MASK_STICKERS, (c) => (c === "x" ? "D" : "-"));
+  for (const auf of AUFS) CASE_BY_MASK.set(yellowMask(applyAlg(facelets, auf)), name);
 }
 
 /**
@@ -92,6 +86,6 @@ for (const name of OLL_NAMES) {
  * (an AUF or a PLL).
  */
 export function identifyOll(before, after) {
-  const alg = applyPermutation(applyPermutation(SOLVED, solvingPermutation(after)), inverse(solvingPermutation(before)));
-  return CASE_BY_MASK.get(yellowMask(alg)) ?? null;
+  const solvedByAlg = applyPermutation(SOLVED, compose(solvingPermutation(after), inverse(solvingPermutation(before))));
+  return CASE_BY_MASK.get(yellowMask(solvedByAlg)) ?? null;
 }

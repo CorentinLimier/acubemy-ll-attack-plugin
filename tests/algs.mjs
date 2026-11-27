@@ -129,3 +129,6 @@ export const OLL_ALGS = [
   "r U r' U R U' R' U R U' R' r U' r'",
   "R U R' U' M' U R U' r'",
 ].map((alg, i) => ({ name: String(i + 1), alg }));
+
+/** The known alg of a case, PLL or OLL, by name ("T", "27"). */
+export const alg = (name) => [...PLL_ALGS, ...OLL_ALGS].find((a) => a.name === name).alg;

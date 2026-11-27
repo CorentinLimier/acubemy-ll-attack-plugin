@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SOLVED, applyAlg, isF2LState, solvingPermutation, toHostFrame } from "../cube.js";
+import { SOLVED, applyAlg, isF2LState, toHostFrame } from "../cube.js";
 import { OLL_CASES, OLL_NAMES, identifyOll, yellowMask } from "../oll.js";
 import { OLL_ALGS, PLL_ALGS, faceTurns, invert } from "./algs.mjs";
 
@@ -10,7 +10,6 @@ test("faceTurns: wide, slice moves and rotations as a smart cube sees them", () 
   assert.equal(faceTurns("r U r'"), "L F L'"); // after r, the player's U is the cube's F
   assert.equal(faceTurns("M2 U M2"), "R2 L2 D R2 L2");
   assert.equal(faceTurns("y R U R'"), "B U B'");
-  assert.equal(applyAlg(SOLVED, host("r U R' U' r' R U R U' R'")).length, 54);
   assert.equal(faceTurns("x y x'"), "");
   // M U M' U and its face-turn version give the same cube.
   assert.equal(applyAlg(SOLVED, host("M' U M U2 M' U M")), applyAlg(SOLVED, host("R' L x U R L' x' U2 R' L x U R L' x'")));
@@ -22,7 +21,7 @@ test("each case pattern is the state its known alg solves", () => {
   for (const { name, alg } of OLL_ALGS) {
     const state = applyAlg(SOLVED, invert(host(alg)));
     assert.ok(isF2LState(state), `${name}: the alg keeps F2L`);
-    assert.equal(yellowMask(state).match(/.../g).join(" "), OLL_CASES[name], `OLL ${name}`);
+    assert.equal(yellowMask(state), OLL_CASES[name], `OLL ${name}`);
     assert.equal(identifyOll(state, SOLVED), name);
   }
 });
@@ -59,5 +58,4 @@ test("detection works from any F2L state, with AUFs and y rotations", () => {
 test("orientation unchanged: an AUF or a PLL is not an OLL", () => {
   assert.equal(identifyOll(SOLVED, applyAlg(SOLVED, "D")), null);
   for (const { alg } of PLL_ALGS) assert.equal(identifyOll(SOLVED, applyAlg(SOLVED, toHostFrame(alg))), null);
-  solvingPermutation(applyAlg(SOLVED, host(OLL_ALGS[0].alg))); // a valid cube
 });

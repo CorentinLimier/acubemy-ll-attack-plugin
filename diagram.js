@@ -40,7 +40,7 @@ ${stickers.join("")}
 }
 
 const pictures = (cases, fills) =>
-  Object.fromEntries(Object.entries(cases).map(([name, pattern]) => [name, render(fills([...pattern.replace(/ /g, "")]))]));
+  Object.fromEntries(Object.entries(cases).map(([name, pattern]) => [name, render(fills([...pattern]))]));
 
 // PLL: the yellow face, and the side colours.
 const pll = (ring) => [...TOP_CELLS.map(() => COLORS.D), ...ring.map((c) => COLORS[COLOUR_TO_FACE[c]])];

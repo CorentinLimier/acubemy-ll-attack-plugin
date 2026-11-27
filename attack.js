@@ -3,17 +3,21 @@ import { PLL_NAMES, identifyPll } from "./pll.js";
 import { OLL_NAMES, identifyOll } from "./oll.js";
 
 /**
- * What each attack drills: its cases, the states it starts each case from
- * (`isBaseline`) and how it tells which case took one such state to the next.
+ * The attacks, by title ("PLL"): each one's cases, the states it starts each
+ * case from (`isBaseline`) and how it tells which case took one such state to
+ * the next. For the UI: `solveFirst`, what to solve before starting, and
+ * `label`, how a case is named over the cube.
  * `mergeMs`: some OLL algs are two shorter OLL algs in a row (OLL 18 is OLL 7,
  * U2, OLL 8), so F2L is solved in the middle of them. When the alg goes on
  * within `mergeMs` of such a state, it is either two cases or one: the plugin
  * picks the one that gets the earliest case of the planned order still to do.
  */
-export const MODES = {
-  PLL: { title: "PLL", names: PLL_NAMES, isBaseline: isPllState, identify: identifyPll, baseline: "F2L and the yellow face" },
-  OLL: { title: "OLL", names: OLL_NAMES, isBaseline: isF2LState, identify: identifyOll, baseline: "F2L", mergeMs: 500 },
-};
+export const MODES = Object.fromEntries(
+  [
+    { title: "PLL", names: PLL_NAMES, isBaseline: isPllState, identify: identifyPll, solveFirst: "F2L and the yellow face", label: (name) => name },
+    { title: "OLL", names: OLL_NAMES, isBaseline: isF2LState, identify: identifyOll, solveFirst: "F2L", label: (name) => `OLL ${name}`, mergeMs: 500 },
+  ].map((mode) => [mode.title, mode])
+);
 
 /**
  * Time attack state machine. Feed it the cube's facelets after every move
@@ -25,7 +29,10 @@ export const MODES = {
  */
 export class Attack {
   constructor(mode = MODES.PLL, facelets = SOLVED) {
-    this.orders = {}; // planned order of the cases, by attack: kept across restarts
+    // Planned order of the cases, by attack title: the player can drag them
+    // before the attack starts. Kept across restarts (the sandbox has no
+    // storage, so it lasts until the plugin is closed).
+    this.orders = {};
     this.restart(facelets, mode);
   }
 
@@ -46,7 +53,7 @@ export class Attack {
     this.startTime = null;
     this.endTime = null;
     this.baseline = mode.isBaseline(facelets) ? facelets : null;
-    this.last = null; // the last case seen, while the alg may still go on (see mergeMs)
+    this.last = null; // { from, time, result (null for a repeat), goesOn }: the last case, while its alg may still go on (see mergeMs)
   }
 
   get phase() {
@@ -94,30 +101,31 @@ export class Attack {
     // Reached a baseline state from a broken one (e.g. cube was scrambled): arm only.
     if (!before || this.startTime === null) return null;
 
+    // The alg that went on after the last case has ended here: it's now or never
+    // for counting them as one case.
+    const last = this.last?.goesOn ? this.last : null;
+    if (last) this.last = null;
+
     let name = this.mode.identify(before, facelets);
     if (!name) return null; // only an AUF (or, for OLL, a PLL)
 
-    const last = this.last;
-    if (last?.goesOn) {
-      // Two cases (the last one and this one) or one (the whole alg)?
+    if (last) {
+      // Two cases (the last one and this one) or one (the whole alg)? Whichever
+      // gets the earliest case of the planned order that is still to do.
+      if (last.result) this.results.pop();
       const whole = this.mode.identify(last.from, facelets);
-      const counted = last.counted ? this.results.at(-1) : null;
-      const toDo = (n) => !this.results.some((r) => r.name === n && r !== counted);
+      const parts = [last.result?.name, name].filter((n) => n && !this.isDone(n));
       const rank = (n) => this.order.indexOf(n);
-      const parts = [counted?.name, name].filter((n) => n && toDo(n));
-      if (whole && toDo(whole) && (!parts.length || rank(whole) < Math.min(...parts.map(rank)))) {
-        if (counted) this.results.pop();
+      if (whole && !this.isDone(whole) && (!parts.length || rank(whole) < Math.min(...parts.map(rank)))) {
         before = last.from;
         name = whole;
-      }
+      } else if (last.result) this.results.push(last.result);
     }
-    const repeat = this.isDone(name);
-    this.last = this.mode.mergeMs ? { from: before, time: now, counted: !repeat, goesOn: false } : null;
-    if (repeat) return { type: "repeat", name };
 
-    const previous = this.results.length ? this.results[this.results.length - 1].split : 0;
     const split = now - this.startTime;
-    const result = { name, caseTime: split - previous, split };
+    const result = this.isDone(name) ? null : { name, caseTime: split - (this.results.at(-1)?.split ?? 0), split };
+    this.last = this.mode.mergeMs ? { from: before, time: now, result, goesOn: false } : null;
+    if (!result) return { type: "repeat", name };
     this.results.push(result);
     if (this.results.length === this.mode.names.length) {
       this.endTime = now;
