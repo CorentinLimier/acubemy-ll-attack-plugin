@@ -64,7 +64,6 @@ function renderTable() {
   const pending = order.filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
   const done = attack.results.map(doneRow).reverse();
   $("rows").replaceChildren(...pending, ...done);
-  $("plan-hint").hidden = !reorder;
   $("progress").textContent = `${attack.results.length} / ${PLL_NAMES.length}`;
 }
 
