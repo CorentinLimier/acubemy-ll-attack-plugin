@@ -35,10 +35,15 @@ no storage).
 | `attack.js` | Attack state machine: timer, splits, results |
 | `main.js`, `view.js`, `index.html`, `style.css` | UI, 3D cube (Three.js) |
 | `tests/` | `npm test` (Node 20+); `tests/algs.mjs` has a known alg per case, used to check the patterns |
+| `eslint.config.js` | Lint rules (`npm run lint`): unused code, undefined names, `===`, `const` |
+| `.github/workflows/ci.yml` | Runs the lint and the tests on every push |
 
 ## Develop
 
 ```sh
+npm install      # dev tools only: ESLint
+npm run lint
+npm test
 npx serve --cors .
 ```
 
