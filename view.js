@@ -73,6 +73,7 @@ export function createCubeView(container) {
 
   const queue = []; // { move, facelets } waiting to be animated
   let turn = null; // the turn being animated
+  let latest = null; // the last state asked for: shown, or reached at the end of the queue
 
   function startNextTurn(now) {
     const next = queue.shift();
@@ -165,8 +166,10 @@ export function createCubeView(container) {
   resize();
 
   return {
-    /** Show a state right away, dropping pending animations. */
+    /** Show a state right away, dropping pending animations (no-op if the queue already ends on it). */
     setFacelets(facelets) {
+      if (facelets === latest) return;
+      latest = facelets;
       queue.length = 0;
       if (turn) finishTurn();
       paint(facelets);
@@ -175,6 +178,7 @@ export function createCubeView(container) {
     /** Animate a quarter turn (acubemy's frame, e.g. "R'"), ending on `facelets`. */
     animateMove(move, facelets) {
       if (!AXES[move[0]]) return this.setFacelets(facelets);
+      latest = facelets;
       queue.push({ move, facelets });
       wake();
     },

@@ -192,6 +192,8 @@ function tick() {
 // *before* it stores the new facelets, so getFacelets() inside onMove would
 // still give the old state: we read the new one in onStateChange instead.
 // Both fire in the same message, so a PLL is timed at the move that ends it.
+// The view animates each move from onMove (attack.facelets is still the state
+// before it) and ignores the matching state change that follows.
 
 const standalone = window.parent === window;
 
@@ -206,22 +208,15 @@ function handleEvent(event) {
   renderTimer();
 }
 
-// The move that the next state change comes from, so the view can animate it.
-// onStateChange fires synchronously right after onMove in the same message.
-let pendingMove = null;
-
 function handleState(facelets, now = performance.now()) {
   if (!isValidFacelets(facelets)) return;
   const event = attack.update(facelets, now);
-  if (pendingMove) view?.animateMove(pendingMove, facelets);
-  else view?.setFacelets(facelets);
-  pendingMove = null;
+  view?.setFacelets(facelets); // no-op when it's the state the move animation ends on
   handleEvent(event);
 }
 
 function handleMove(move, now = performance.now()) {
-  pendingMove = move;
-  queueMicrotask(() => (pendingMove = null)); // no state followed: don't animate it later
+  view?.animateMove(move, applyMove(attack.facelets, move));
   if (attack.start(now)) {
     status = { text: "", warn: false };
     renderTable(); // drag handles go away once the attack has started
