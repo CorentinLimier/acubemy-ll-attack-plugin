@@ -16,15 +16,15 @@ button:disabled { opacity: .4; cursor: default; }
 button.primary { background: #ff8a00; border-color: #ff8a00; color: #fff; }
 button.primary:hover { background: #ff9d2e; }
 
-.table { flex: 0 0 360px; overflow-y: auto; }
+.table { flex: 0 0 380px; overflow-y: auto; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
 th { position: sticky; top: 0; z-index: 1; background: #16181d; text-align: left; font-weight: 600; opacity: .7; padding: 6px 8px; border-bottom: 1px solid #2d313b; }
 td { padding: 3px 8px; border-bottom: 1px solid #22252c; }
 .time { text-align: right; }
 td.idx { opacity: .5; width: 2em; }
 td.handle-cell { width: 2em; padding: 0 0 0 2px; }
-td.pic { width: 52px; padding: 3px 4px 3px 0; line-height: 0; }
-.pll-diagram { width: 52px; height: 52px; display: block; }
+td.pic { width: 78px; padding: 3px 4px 3px 0; line-height: 0; }
+.pll-diagram { width: 78px; height: 78px; display: block; }
 tr.pending td.name { opacity: .85; }
 tr.pending td.time { opacity: .3; }
 tr.latest td { background: #2b2410; }
