@@ -37,7 +37,8 @@ function fmt(ms) {
 // Planned order of the cases: the player can drag them before the attack starts.
 // (The sandbox has no storage, so it lasts until the plugin is closed.)
 let order = [...PLL_NAMES];
-const canReorder = () => attack.phase === "waiting" || attack.phase === "armed";
+let sortable = null; // SortableJS instance, once loaded
+const canReorder = () => sortable !== null && (attack.phase === "waiting" || attack.phase === "armed");
 
 function pendingRow(name, reorder) {
   const tr = document.createElement("tr");
@@ -58,8 +59,8 @@ function doneRow(r, i) {
 // Cases still to do on top (with their picture), then the done ones, most
 // recent first: the first PLL done ends up at the bottom.
 function renderTable() {
-  endDrag(false);
   const reorder = canReorder();
+  sortable?.option("disabled", !reorder);
   const pending = order.filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
   const done = attack.results.map(doneRow).reverse();
   $("rows").replaceChildren(...pending, ...done);
@@ -67,79 +68,26 @@ function renderTable() {
   $("progress").textContent = `${attack.results.length} / ${PLL_NAMES.length}`;
 }
 
-// ---- reordering (pointer drag, works with mouse and touch) -----------------
+// ---- reordering -------------------------------------------------------------
+// Drag (mouse and touch, with autoscroll) by SortableJS. Optional like the 3D
+// view: if the CDN fails, the attack works without reordering.
 
-let drag = null; // { row, y, frame }
-
-function pendingRows() {
-  return [...$("rows").querySelectorAll("tr.pending")];
-}
-
-function placeDraggedRow(y) {
-  const others = pendingRows().filter((r) => r !== drag.row);
-  const before = others.find((r) => {
-    const box = r.getBoundingClientRect();
-    return y < box.top + box.height / 2;
-  });
-  if (before) {
-    if (drag.row.nextSibling !== before) $("rows").insertBefore(drag.row, before);
-  } else if (others.length) {
-    others[others.length - 1].after(drag.row);
-  }
-}
-
-// Scroll the list (or the page on narrow screens) when dragging near an edge.
-function autoScroll() {
-  if (!drag) return;
-  const box = document.querySelector(".table");
-  const scrollsItself = box.scrollHeight > box.clientHeight;
-  // The sticky header covers the top of the list: the scroll-up zone starts below it.
-  const headerBottom = box.querySelector("th").getBoundingClientRect().bottom; // th is the sticky part
-  const top = scrollsItself ? headerBottom : 0;
-  const bottom = scrollsItself ? box.getBoundingClientRect().bottom : window.innerHeight;
-  const edge = 56;
-  let speed = 0;
-  if (drag.y < top + edge) speed = -Math.max(4, (top + edge - drag.y) / 2);
-  else if (drag.y > bottom - edge) speed = Math.max(4, (drag.y - bottom + edge) / 2);
-  if (speed) {
-    if (scrollsItself) box.scrollTop += speed;
-    else window.scrollBy(0, speed);
-    placeDraggedRow(drag.y);
-  }
-  drag.frame = requestAnimationFrame(autoScroll);
-}
-
-function endDrag(commit) {
-  if (!drag) return;
-  cancelAnimationFrame(drag.frame);
-  drag.row.classList.remove("dragging");
-  document.body.classList.remove("reordering");
-  drag = null;
-  if (commit) {
-    const planned = pendingRows().map((r) => r.dataset.name);
-    order = [...planned, ...order.filter((name) => !planned.includes(name))];
-  }
-}
-
-// The tbody keeps the pointer capture: the dragged row itself moves in the DOM.
-$("rows").addEventListener("pointerdown", (e) => {
-  const handle = e.target.closest(".handle");
-  if (!handle || !canReorder() || e.button > 0) return;
-  e.preventDefault();
-  const row = handle.closest("tr");
-  drag = { row, y: e.clientY, frame: 0 };
-  row.classList.add("dragging");
-  document.body.classList.add("reordering");
-  $("rows").setPointerCapture(e.pointerId);
-  drag.frame = requestAnimationFrame(autoScroll);
-});
-$("rows").addEventListener("pointermove", (e) => {
-  if (!drag) return;
-  drag.y = e.clientY;
-  placeDraggedRow(e.clientY);
-});
-$("rows").addEventListener("pointerup", () => endDrag(true));
-$("rows").addEventListener("pointercancel", () => endDrag(true));
+import("sortablejs")
+  .then(({ default: Sortable }) => {
+    sortable = Sortable.create($("rows"), {
+      handle: ".handle",
+      draggable: "tr.pending",
+      animation: 150,
+      forceFallback: true, // same pointer-driven drag for mouse and touch
+      ghostClass: "dragging",
+      scrollSensitivity: 80, // the sticky header covers the top of the list
+      onEnd() {
+        order = [...$("rows").querySelectorAll("tr.pending")].map((r) => r.dataset.name);
+      },
+    });
+    renderTable();
+  })
+  .catch((e) => console.warn("Reordering unavailable", e));
 
 // Keyboard: focus a handle, then arrow up / down.
 $("rows").addEventListener("keydown", (e) => {

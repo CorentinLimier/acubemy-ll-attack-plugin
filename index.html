@@ -9,7 +9,8 @@
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "sortablejs": "https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/modular/sortable.esm.js"
       }
     }
   </script>
@@ -29,7 +30,7 @@
       </div>
     </section>
     <section class="table">
-      <p id="plan-hint" class="hint">Drag <span class="grip">⠿</span> to set the order you'll do them in</p>
+      <p id="plan-hint" class="hint" hidden>Drag <span class="grip">⠿</span> to set the order you'll do them in</p>
       <table>
         <thead>
           <tr><th>#</th><th colspan="2">PLL</th><th class="time">Case</th><th class="time">Total</th></tr>
