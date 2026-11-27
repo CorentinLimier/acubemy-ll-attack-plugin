@@ -9,6 +9,18 @@ function quarterTurns(alg) {
   return alg.trim().split(/\s+/).flatMap((m) => (m.endsWith("2") ? [m[0], m[0]] : [m]));
 }
 
+// Shuffled the same way on every run (Fisher-Yates with a Park-Miller
+// generator, seed > 0), so a failure can be replayed.
+function shuffle(list, seed) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 // What the plugin does for each move: start() on the move, update() with the new state.
 function step(attack, move, now) {
   attack.start(now);
@@ -29,7 +41,7 @@ test("full attack in a shuffled order with AUFs, a repeat and an extra AUF", () 
   const attack = new Attack(MODES.PLL, SOLVED);
   assert.equal(attack.phase, "armed");
   const clock = { t: 1000 };
-  const order = [...ALGS].sort(() => Math.random() - 0.5);
+  const order = shuffle(ALGS, 1);
   const aufs = ["", "U", "U2", "U'"];
 
   const first = play(attack, `U ${order[0].alg}`, clock);
@@ -122,7 +134,7 @@ test("state-driven: start() on the move, update() with acubemy's facelets", () =
 test("OLL attack: all 57 in a shuffled order, from whatever state the last one left", () => {
   const attack = new Attack(MODES.OLL, SOLVED);
   const clock = { t: 0 };
-  const order = [...OLL_ALGS].sort(() => Math.random() - 0.5);
+  const order = shuffle(OLL_ALGS, 2);
   order.forEach(({ name, alg }, i) => {
     clock.t += 1000; // a pause between algs: two algs in a row are not one case
     play(attack, `${["", "U", "U2", "U'"][i % 4]} ${alg}`, clock);
@@ -176,12 +188,13 @@ test("PLL attack: two PLLs in a row are never merged", () => {
   assert.deepEqual(attack.results.map((r) => r.name), ["T", "Ua"]);
 });
 
-test("restart can switch to the other attack", () => {
+test("restart can switch to the other attack, even while one is running", () => {
   const attack = new Attack(MODES.PLL, SOLVED);
   play(attack, ALGS[0].alg, { t: 0 });
   attack.restart(attack.facelets, MODES.OLL);
   assert.equal(attack.mode, MODES.OLL);
-  assert.equal(attack.phase, "armed");
+  assert.equal(attack.phase, "armed"); // in the middle of the PLL attack: the timer is reset too
+  assert.equal(attack.startTime, null);
   assert.deepEqual(attack.results, []);
 });
 

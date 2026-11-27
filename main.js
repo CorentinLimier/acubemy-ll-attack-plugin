@@ -165,11 +165,10 @@ function renderTimer() {
   $("timer").className = attack.phase === "finished" ? "finished" : "";
 }
 
-// Tabs: which attack to do. Switching is a restart, so not during an attack.
+// Tabs: which attack to do. Switching restarts, even during an attack.
 function renderTabs() {
   for (const tab of document.querySelectorAll("[role=tab]")) {
     tab.setAttribute("aria-selected", String(MODES[tab.dataset.mode] === attack.mode));
-    tab.disabled = attack.phase === "running";
   }
 }
 
@@ -249,7 +248,6 @@ function handleMove(move, now = performance.now()) {
   view?.animateMove(move);
   if (attack.start(now)) {
     status = { text: "", warn: false };
-    renderTabs();
     renderTable(); // drag handles go away once the attack has started
     renderStatus();
     requestAnimationFrame(tick);
@@ -300,7 +298,7 @@ $("restart").addEventListener("click", () => restart());
 
 document.querySelector("[role=tablist]").addEventListener("click", (e) => {
   const tab = e.target.closest("[role=tab]");
-  if (!tab || tab.disabled || MODES[tab.dataset.mode] === attack.mode) return;
+  if (!tab || MODES[tab.dataset.mode] === attack.mode) return;
   restart(MODES[tab.dataset.mode]);
   $("rows").closest(".table").scrollTop = 0;
 });

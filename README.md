@@ -2,7 +2,7 @@
 
 Do all 21 PLLs or all 57 OLLs, in any order, on a smart cube. Each case is
 recognised automatically and timed. Pick the attack with the **PLL / OLL** tabs
-at the top (switching restarts; it's locked while an attack is running).
+at the top: switching restarts, even in the middle of an attack.
 
 The table on the right lists the cases still to do on top, each with a picture
 (yellow face and the top row of the sides, as you hold the cube). Before the
