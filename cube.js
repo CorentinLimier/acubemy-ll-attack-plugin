@@ -86,6 +86,12 @@ export function algPermutation(alg) {
     .reduce((p, token) => compose(p, movePermutation(token)), IDENTITY);
 }
 
+export function inverse(p) {
+  const out = new Array(p.length);
+  p.forEach((dest, i) => (out[dest] = i));
+  return out;
+}
+
 export function applyPermutation(facelets, p) {
   const out = new Array(54);
   for (let i = 0; i < 54; i++) out[p[i]] = facelets[i];
@@ -102,15 +108,56 @@ export function applyMove(facelets, move) {
 
 // The 12 side stickers of the yellow (D) layer: the only stickers a PLL moves
 // once F2L is solved and the yellow face is oriented. It's the bottom row of
-// the B, L, F and R faces, which is the order the PLL patterns use (clockwise
+// the B, L, F and R faces, which is the order the case patterns use (clockwise
 // from above with yellow on top: back, right, front, left of the player).
 export const LAST_LAYER_RING = [51, 52, 53, 42, 43, 44, 24, 25, 26, 15, 16, 17];
-const RING_SET = new Set(LAST_LAYER_RING);
+// The 9 yellow (D) stickers as the player sees them from above, row by row
+// from the back-left (z2: the player's top-left-back is acubemy's D sticker 35).
+export const LAST_LAYER_TOP = [35, 34, 33, 32, 31, 30, 29, 28, 27];
 
-/** True when F2L (white side) is solved and the yellow face is all yellow. */
-export function isPllState(facelets) {
+function solvedExcept(facelets, free) {
   for (let i = 0; i < 54; i++) {
-    if (!RING_SET.has(i) && facelets[i] !== SOLVED[i]) return false;
+    if (!free.has(i) && facelets[i] !== SOLVED[i]) return false;
   }
   return true;
+}
+
+const RING_SET = new Set(LAST_LAYER_RING);
+const LAST_LAYER_SET = new Set([...LAST_LAYER_RING, ...LAST_LAYER_TOP]);
+
+/** True when F2L (white side) is solved and the yellow face is all yellow: a PLL is left. */
+export const isPllState = (facelets) => solvedExcept(facelets, RING_SET);
+
+/** True when F2L (white side) is solved: only the yellow layer is left. */
+export const isF2LState = (facelets) => solvedExcept(facelets, LAST_LAYER_SET);
+
+// The player holds yellow on top, but in acubemy's frame yellow is D.
+// A z2 rotation maps one to the other: U<->D, R<->L, F and B unchanged.
+const Z2 = { U: "D", D: "U", R: "L", L: "R", F: "F", B: "B" };
+export function toHostFrame(alg) {
+  return alg.replace(/[URFDLB]/g, (f) => Z2[f]);
+}
+
+// Stickers grouped by cubie, to recognise pieces by their colours.
+const CUBIES = new Map();
+STICKERS.forEach((s, i) => {
+  const key = s.pos.join();
+  if (!CUBIES.has(key)) CUBIES.set(key, []);
+  CUBIES.get(key).push(i);
+});
+const pieceKey = (facelets, indices) => indices.map((i) => facelets[i]).sort().join("");
+const HOME = new Map([...CUBIES.values()].map((indices) => [pieceKey(SOLVED, indices), indices]));
+
+/** Sticker permutation that takes `state` to the solved cube (any alg for that case does this). */
+export function solvingPermutation(state) {
+  const perm = STICKERS.map((_, i) => i);
+  const seen = new Set();
+  for (const indices of CUBIES.values()) {
+    const key = pieceKey(state, indices);
+    if (!HOME.has(key) || seen.has(key)) throw new Error("Invalid cube state");
+    seen.add(key);
+    const home = HOME.get(key);
+    for (const i of indices) perm[i] = home.find((j) => SOLVED[j] === state[i]);
+  }
+  return perm;
 }

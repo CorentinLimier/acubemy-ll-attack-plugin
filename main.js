@@ -1,13 +1,12 @@
-import { COLORS, applyMove } from "./cube.js";
-import { PLL_NAMES, toHostFrame } from "./pll.js";
-import { PllAttack, isResetGesture } from "./attack.js";
-import { PLL_DIAGRAMS } from "./diagram.js";
+import { COLORS, applyMove, toHostFrame } from "./cube.js";
+import { Attack, MODES, isResetGesture } from "./attack.js";
+import { DIAGRAMS } from "./diagram.js";
 
 const $ = (id) => document.getElementById(id);
 
-const attack = new PllAttack(acubemy.getFacelets());
+const attack = new Attack(MODES.PLL, acubemy.getFacelets());
 let status = { text: "", warn: false };
-let latest = null; // name of the last PLL solved
+let latest = null; // name of the last case solved
 let view = null;
 let device = acubemy.getDevice();
 
@@ -32,11 +31,16 @@ function fmt(ms) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}.${frac}`;
 }
 
+// How a case is named over the cube and in messages: "T", "OLL 27".
+const label = (name) => (attack.mode === MODES.OLL ? `OLL ${name}` : name);
+
 // ---- rendering ------------------------------------------------------------
 
-// Planned order of the cases: the player can drag them before the attack starts.
-// (The sandbox has no storage, so it lasts until the plugin is closed.)
-let order = [...PLL_NAMES];
+// Planned order of the cases, for each attack: the player can drag them before
+// the attack starts. (The sandbox has no storage, so it lasts until the plugin
+// is closed.)
+const orders = Object.fromEntries(Object.entries(MODES).map(([key, mode]) => [key, [...mode.names]]));
+const order = () => orders[attack.mode.title];
 let sortable = null; // SortableJS instance, once loaded
 const canReorder = () => sortable !== null && (attack.phase === "waiting" || attack.phase === "armed");
 
@@ -45,7 +49,7 @@ function pendingRow(name, reorder) {
   tr.className = "pending";
   tr.dataset.name = name;
   const handle = reorder ? `<button class="handle" aria-label="Move ${name}" title="Drag to reorder">⠿</button>` : "";
-  tr.innerHTML = `<td class="handle-cell">${handle}</td><td class="pic">${PLL_DIAGRAMS[name]}</td><td class="name">${name}</td><td class="time">–</td><td class="time">–</td>`;
+  tr.innerHTML = `<td class="handle-cell">${handle}</td><td class="pic">${DIAGRAMS[attack.mode.title][name]}</td><td class="name">${name}</td><td class="time">–</td><td class="time">–</td>`;
   return tr;
 }
 
@@ -58,7 +62,7 @@ function doneRow(r, i) {
   return tr;
 }
 
-// Done cases are listed newest first (Total, descending): the first PLL done
+// Done cases are listed newest first (Total, descending): the first case done
 // ends up at the bottom. Once the drill is finished, the headers sort them.
 const DEFAULT_SORT = { key: "split", dir: "desc" };
 let sort = DEFAULT_SORT;
@@ -66,12 +70,13 @@ let sort = DEFAULT_SORT;
 function sortedResults() {
   const rows = attack.results.map((r, i) => ({ r, i }));
   const { key, dir } = sort;
-  const compare = key === "name" ? (a, b) => a.r.name.localeCompare(b.r.name) : (a, b) => a.r[key] - b.r[key];
+  const compare = key === "name" ? (a, b) => a.r.name.localeCompare(b.r.name, "en", { numeric: true }) : (a, b) => a.r[key] - b.r[key];
   rows.sort((a, b) => (dir === "asc" ? compare(a, b) : compare(b, a)));
   return rows;
 }
 
 function renderHeader() {
+  $("case-header").textContent = attack.mode.title;
   const finished = attack.phase === "finished";
   for (const button of document.querySelectorAll(".sort")) {
     button.disabled = !finished;
@@ -87,11 +92,11 @@ function renderHeader() {
 function renderTable() {
   const reorder = canReorder();
   sortable?.option("disabled", !reorder);
-  const pending = order.filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
+  const pending = order().filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
   const done = sortedResults().map(({ r, i }) => doneRow(r, i));
   $("rows").replaceChildren(...pending, ...done);
   flashLatest = false;
-  $("progress").textContent = `${attack.results.length} / ${PLL_NAMES.length}`;
+  $("progress").textContent = `${attack.results.length} / ${attack.mode.names.length}`;
   renderHeader();
 }
 
@@ -118,7 +123,7 @@ import("sortablejs")
       ghostClass: "dragging",
       scrollSensitivity: 80, // the sticky header covers the top of the list
       onEnd() {
-        order = [...$("rows").querySelectorAll("tr.pending")].map((r) => r.dataset.name);
+        orders[attack.mode.title] = [...$("rows").querySelectorAll("tr.pending")].map((r) => r.dataset.name);
       },
     });
     renderTable();
@@ -131,6 +136,7 @@ $("rows").addEventListener("keydown", (e) => {
   if (!handle || !canReorder() || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
   e.preventDefault();
   const name = handle.closest("tr").dataset.name;
+  const order = orders[attack.mode.title];
   const i = order.indexOf(name);
   const j = e.key === "ArrowUp" ? i - 1 : i + 1;
   if (j < 0 || j >= order.length) return;
@@ -141,9 +147,9 @@ $("rows").addEventListener("keydown", (e) => {
 
 function defaultStatus() {
   switch (attack.phase) {
-    case "waiting": return { text: "Solve F2L and the yellow face, or reset the cube state in acubemy", warn: true };
+    case "waiting": return { text: `Solve ${attack.mode.baseline}, or reset the cube state in acubemy`, warn: true };
     case "armed": return { text: "Ready: the timer starts at your first move", warn: false };
-    case "finished": return { text: `All ${PLL_NAMES.length} PLLs in ${fmt(attack.elapsed())}`, warn: false };
+    case "finished": return { text: `All ${attack.mode.names.length} ${attack.mode.title}s in ${fmt(attack.elapsed())}`, warn: false };
     default: return { text: "Go!", warn: false };
   }
 }
@@ -159,7 +165,16 @@ function renderTimer() {
   $("timer").className = attack.phase === "finished" ? "finished" : "";
 }
 
+// Tabs: which attack to do. Switching is a restart, so not during an attack.
+function renderTabs() {
+  for (const tab of document.querySelectorAll("[role=tab]")) {
+    tab.setAttribute("aria-selected", String(MODES[tab.dataset.mode] === attack.mode));
+    tab.disabled = attack.phase === "running";
+  }
+}
+
 function renderAll() {
+  renderTabs();
   renderTable();
   renderStatus();
   renderTimer();
@@ -175,14 +190,14 @@ function tick() {
 // acubemy's tracked state is the reference. The SDK calls onMove listeners
 // *before* it stores the new facelets, so getFacelets() inside onMove would
 // still give the old state: we read the new one in onStateChange instead.
-// Both fire in the same message, so a PLL is timed at the move that ends it.
+// Both fire in the same message, so a case is timed at the move that ends it.
 // acubemy may send a move's new state before or after the move itself, so
 // nothing here depends on that order: the view animates each move from what it
 // shows, and acubemy's state is applied to it shortly after, only if it differs.
 
 const standalone = window.parent === window;
 
-// A short reward when a PLL is done: the case name pops over the cube with
+// A short reward when a case is done: the case name pops over the cube with
 // its time and a burst of cube-coloured sparks, and the timer pulses.
 // Animations are in style.css; each celebration replaces the previous one.
 function celebrate(title, time, sparks, big = false) {
@@ -206,15 +221,15 @@ function celebrate(title, time, sparks, big = false) {
 }
 
 function handleEvent(event) {
-  if (event?.type === "pll" || event?.type === "finish") {
+  if (event?.type === "case" || event?.type === "finish") {
     latest = event.result.name;
     status = { text: "", warn: false }; // the celebration shows the case and its time
     flashLatest = true;
     renderTable();
-    if (event.type === "pll") celebrate(event.result.name, fmt(event.result.caseTime), 14);
-    else celebrate(`All ${PLL_NAMES.length}!`, fmt(event.result.split), 36, true);
+    if (event.type === "case") celebrate(label(event.result.name), fmt(event.result.caseTime), 14);
+    else celebrate(`All ${attack.mode.names.length}!`, fmt(event.result.split), 36, true);
   }
-  if (event?.type === "repeat") status = { text: `${event.name} already done, it doesn't count`, warn: true };
+  if (event?.type === "repeat") status = { text: `${label(event.name)} already done, it doesn't count`, warn: true };
   renderStatus();
   renderTimer();
 }
@@ -234,6 +249,7 @@ function handleMove(move, now = performance.now()) {
   view?.animateMove(move);
   if (attack.start(now)) {
     status = { text: "", warn: false };
+    renderTabs();
     renderTable(); // drag handles go away once the attack has started
     renderStatus();
     requestAnimationFrame(tick);
@@ -269,9 +285,9 @@ acubemy.onGyro((q) => {
 
 // ---- buttons --------------------------------------------------------------
 
-// Restart button, or U4 / D4 on the cube (acubemy's reset gesture).
-function restart() {
-  attack.restart();
+// Restart button, or U4 / D4 on the cube (acubemy's reset gesture), or a tab.
+function restart(mode = attack.mode) {
+  attack.restart(attack.facelets, mode);
   recentMoves = [];
   latest = null;
   sort = DEFAULT_SORT;
@@ -280,16 +296,23 @@ function restart() {
   renderAll();
 }
 
-$("restart").addEventListener("click", restart);
+$("restart").addEventListener("click", () => restart());
+
+document.querySelector("[role=tablist]").addEventListener("click", (e) => {
+  const tab = e.target.closest("[role=tab]");
+  if (!tab || tab.disabled || MODES[tab.dataset.mode] === attack.mode) return;
+  restart(MODES[tab.dataset.mode]);
+  $("rows").closest(".table").scrollTop = 0;
+});
 
 renderDevice();
 renderAll();
 
 // Opened directly in a browser (no acubemy): the SDK maps keys U R F D L B to
 // turns of acubemy's frame (U = white). For testing, play yellow-on-top algs
-// from the console: pllAttack.play("R U R' U' R' F R2 U' R' U' R U R' F'")
+// from the console: timeAttack.play("R U R' U' R' F R2 U' R' U' R U R' F'")
 if (standalone) {
-  window.pllAttack = {
+  window.timeAttack = {
     attack,
     play(alg) {
       for (const m of toHostFrame(alg).trim().split(/\s+/)) {

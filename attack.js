@@ -1,26 +1,42 @@
-import { SOLVED, isPllState } from "./cube.js";
+import { SOLVED, isF2LState, isPllState } from "./cube.js";
 import { PLL_NAMES, identifyPll } from "./pll.js";
+import { OLL_NAMES, identifyOll } from "./oll.js";
 
 /**
- * PLL attack state machine. Feed it the cube's facelets after every move
- * (update) and the time of each move (start); it detects each PLL and keeps
+ * What each attack drills: its cases, the states it starts each case from
+ * (`isBaseline`) and how it tells which case took one such state to the next.
+ * `mergeMs`: some OLL algs are two shorter OLL algs in a row (OLL 3 is OLL 44,
+ * U', OLL 45), so F2L is solved in the middle of them. When the alg goes on
+ * within `mergeMs` of such a state, the two parts count as one case, if that
+ * case is still to do.
+ */
+export const MODES = {
+  PLL: { title: "PLL", names: PLL_NAMES, isBaseline: isPllState, identify: identifyPll, baseline: "F2L and the yellow face" },
+  OLL: { title: "OLL", names: OLL_NAMES, isBaseline: isF2LState, identify: identifyOll, baseline: "F2L", mergeMs: 500 },
+};
+
+/**
+ * Time attack state machine. Feed it the cube's facelets after every move
+ * (update) and the time of each move (start); it detects each case and keeps
  * the splits.
  *
- * Phases: "waiting" (cube not in a PLL state: F2L + yellow face must be solved),
+ * Phases: "waiting" (cube not in a baseline state, e.g. F2L not solved),
  * "armed" (timer starts at the next move), "running", "finished".
  */
-export class PllAttack {
-  constructor(facelets = SOLVED) {
-    this.restart(facelets);
+export class Attack {
+  constructor(mode = MODES.PLL, facelets = SOLVED) {
+    this.restart(facelets, mode);
   }
 
   /** Clear the attack and wait for the first move, from `facelets` (default: the current state). */
-  restart(facelets = this.facelets) {
+  restart(facelets = this.facelets, mode = this.mode) {
+    this.mode = mode;
     this.facelets = facelets;
     this.results = []; // { name, caseTime, split } in solve order
     this.startTime = null;
     this.endTime = null;
-    this.baseline = isPllState(this.facelets) ? this.facelets : null;
+    this.baseline = mode.isBaseline(facelets) ? facelets : null;
+    this.last = null; // the last case seen, while the alg may still go on (see mergeMs)
   }
 
   get phase() {
@@ -47,32 +63,53 @@ export class PllAttack {
 
   /**
    * The cube reached a new state (acubemy's facelets after a move).
-   * Returns an event: null, { type: "pll", result }, { type: "repeat", name } or { type: "finish", result }.
+   * Returns an event: null, { type: "case", result }, { type: "repeat", name } or { type: "finish", result }.
    */
   update(facelets, now) {
     this.facelets = facelets;
+    if (this.phase === "finished") return null;
     // A state in the middle of an alg changes nothing, even before the timer
     // starts: acubemy can send the state of a move before the move itself.
-    if (this.phase === "finished" || !isPllState(facelets)) return null;
+    if (!this.mode.isBaseline(facelets)) {
+      // The first move off the last case: quick enough to be the same alg?
+      if (this.last && !this.last.goesOn) {
+        if (now - this.last.time <= this.mode.mergeMs) this.last.goesOn = true;
+        else this.last = null;
+      }
+      return null;
+    }
 
-    const before = this.baseline;
+    let before = this.baseline;
     this.baseline = facelets;
-    // Reached a PLL state from a broken one (e.g. cube was scrambled): arm only.
+    // Reached a baseline state from a broken one (e.g. cube was scrambled): arm only.
     if (!before || this.startTime === null) return null;
 
-    const name = identifyPll(before, facelets);
-    if (!name) return null; // only an AUF
-    if (this.isDone(name)) return { type: "repeat", name };
+    let name = this.mode.identify(before, facelets);
+    if (!name) return null; // only an AUF (or, for OLL, a PLL)
 
-    const last = this.results.length ? this.results[this.results.length - 1].split : 0;
+    const last = this.last;
+    if (last?.goesOn) {
+      const whole = this.mode.identify(last.from, facelets);
+      const counted = last.counted ? this.results.at(-1) : null;
+      if (whole && !this.results.some((r) => r.name === whole && r !== counted)) {
+        if (counted) this.results.pop();
+        before = last.from;
+        name = whole;
+      }
+    }
+    const repeat = this.isDone(name);
+    this.last = this.mode.mergeMs ? { from: before, time: now, counted: !repeat, goesOn: false } : null;
+    if (repeat) return { type: "repeat", name };
+
+    const previous = this.results.length ? this.results[this.results.length - 1].split : 0;
     const split = now - this.startTime;
-    const result = { name, caseTime: split - last, split };
+    const result = { name, caseTime: split - previous, split };
     this.results.push(result);
-    if (this.results.length === PLL_NAMES.length) {
+    if (this.results.length === this.mode.names.length) {
       this.endTime = now;
       return { type: "finish", result };
     }
-    return { type: "pll", result };
+    return { type: "case", result };
   }
 }
 

@@ -1,4 +1,4 @@
-import { LAST_LAYER_RING, SOLVED, STICKERS, algPermutation, applyPermutation, compose } from "./cube.js";
+import { LAST_LAYER_RING, SOLVED, algPermutation, applyPermutation, compose, solvingPermutation } from "./cube.js";
 
 // Each case as the player sees it from above, yellow on top and green in
 // front: the top row of the four side faces, read clockwise: back (left to
@@ -31,13 +31,6 @@ export const PLL_CASES = {
 
 export const PLL_NAMES = Object.keys(PLL_CASES);
 
-// The player holds yellow on top, but in acubemy's frame yellow is D.
-// A z2 rotation maps one to the other: U<->D, R<->L, F and B unchanged.
-const Z2 = { U: "D", D: "U", R: "L", L: "R", F: "F", B: "B" };
-export function toHostFrame(alg) {
-  return alg.replace(/[URFDLB]/g, (f) => Z2[f]);
-}
-
 /** Pattern colour letter -> acubemy face letter. */
 export const COLOUR_TO_FACE = { G: "F", O: "L", B: "B", R: "R" };
 
@@ -47,30 +40,6 @@ export function caseFacelets(name) {
   const out = SOLVED.split("");
   LAST_LAYER_RING.forEach((index, k) => (out[index] = COLOUR_TO_FACE[colours[k]]));
   return out.join("");
-}
-
-// Stickers grouped by cubie, to recognise pieces by their colours.
-const CUBIES = new Map();
-STICKERS.forEach((s, i) => {
-  const key = s.pos.join();
-  if (!CUBIES.has(key)) CUBIES.set(key, []);
-  CUBIES.get(key).push(i);
-});
-const pieceKey = (facelets, indices) => indices.map((i) => facelets[i]).sort().join("");
-const HOME = new Map([...CUBIES.values()].map((indices) => [pieceKey(SOLVED, indices), indices]));
-
-/** Sticker permutation that takes `state` to the solved cube (any alg for that case does this). */
-export function solvingPermutation(state) {
-  const perm = STICKERS.map((_, i) => i);
-  const seen = new Set();
-  for (const indices of CUBIES.values()) {
-    const key = pieceKey(state, indices);
-    if (!HOME.has(key) || seen.has(key)) throw new Error("Invalid cube state");
-    seen.add(key);
-    const home = HOME.get(key);
-    for (const i of indices) perm[i] = home.find((j) => SOLVED[j] === state[i]);
-  }
-  return perm;
 }
 
 const AUF = ["", "D", "D2", "D'"].map((a) => algPermutation(a)); // the player's U turns

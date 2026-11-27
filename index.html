@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PLL Time Attack</title>
+  <title>PLL &amp; OLL Time Attack</title>
   <link rel="stylesheet" href="style.css" />
   <script type="importmap">
     {
@@ -17,6 +17,10 @@
   <script src="https://cdn.jsdelivr.net/gh/acubemy/plugin-sdk@1/v1.js"></script>
 </head>
 <body>
+  <nav class="tabs" role="tablist" aria-label="Attack">
+    <button role="tab" data-mode="PLL" aria-selected="true">PLL</button>
+    <button role="tab" data-mode="OLL" aria-selected="false">OLL</button>
+  </nav>
   <main>
     <section class="play">
       <p id="device" class="muted">No cube connected</p>
@@ -36,7 +40,7 @@
         <thead>
           <tr>
             <th><button class="sort" data-key="split" data-no-arrow disabled>#</button></th>
-            <th colspan="2"><button class="sort" data-key="name" disabled>PLL</button></th>
+            <th colspan="2"><button class="sort" id="case-header" data-key="name" disabled>PLL</button></th>
             <th class="time"><button class="sort" data-key="caseTime" disabled>Case</button></th>
             <th class="time"><button class="sort" data-key="split" disabled>Total</button></th>
           </tr>

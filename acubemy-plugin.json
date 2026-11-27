@@ -1,10 +1,10 @@
 {
   "sdk": 1,
   "id": "pll-time-attack",
-  "name": "PLL Time Attack",
+  "name": "PLL & OLL Time Attack",
   "author": "Corentin Limier",
   "version": "0.2.0",
-  "description": "Do all 21 PLLs in any order: each one is detected automatically and timed",
+  "description": "Do all 21 PLLs or all 57 OLLs in any order: each one is detected automatically and timed",
   "entry": "index.html",
   "permissions": ["moves", "gyro", "state"]
 }
