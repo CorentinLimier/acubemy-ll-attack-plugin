@@ -1,4 +1,4 @@
-import { applyMove, isValidFacelets } from "./cube.js";
+import { applyMove } from "./cube.js";
 import { PLL_NAMES, toHostFrame } from "./pll.js";
 import { PllAttack } from "./attack.js";
 import { PLL_DIAGRAMS } from "./diagram.js";
@@ -209,7 +209,6 @@ function handleEvent(event) {
 }
 
 function handleState(facelets, now = performance.now()) {
-  if (!isValidFacelets(facelets)) return;
   const event = attack.update(facelets, now);
   view?.setFacelets(facelets); // no-op when it's the state the move animation ends on
   handleEvent(event);

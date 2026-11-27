@@ -1,4 +1,4 @@
-import { SOLVED, STICKERS, algPermutation, applyPermutation, compose } from "./cube.js";
+import { LAST_LAYER_RING, SOLVED, STICKERS, algPermutation, applyPermutation, compose } from "./cube.js";
 
 // Each case as the player sees it from above, yellow on top and green in
 // front: the top row of the four side faces, read clockwise: back (left to
@@ -38,17 +38,13 @@ export function toHostFrame(alg) {
   return alg.replace(/[URFDLB]/g, (f) => Z2[f]);
 }
 
-// Facelet indices of the 12 ring positions, in the order of PLL_CASES: the
-// player's top row of the back, right, front and left faces is the bottom row
-// of acubemy's B, L, F and R faces.
-const RING = [51, 52, 53, 42, 43, 44, 24, 25, 26, 15, 16, 17];
 const COLOUR_TO_FACE = { G: "F", O: "L", B: "B", R: "R" };
 
 /** acubemy facelets of a case: solved cube with the case's last layer. */
 export function caseFacelets(name) {
   const colours = PLL_CASES[name].replace(/ /g, "");
   const out = SOLVED.split("");
-  RING.forEach((index, k) => (out[index] = COLOUR_TO_FACE[colours[k]]));
+  LAST_LAYER_RING.forEach((index, k) => (out[index] = COLOUR_TO_FACE[colours[k]]));
   return out.join("");
 }
 
