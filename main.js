@@ -1,6 +1,7 @@
 import { applyMove, isValidFacelets } from "./cube.js";
 import { PLL_NAMES, toHostFrame } from "./pll.js";
 import { PllAttack } from "./attack.js";
+import { PLL_DIAGRAMS } from "./diagram.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -37,14 +38,14 @@ function renderTable() {
   const rows = attack.results.map((r, i) => {
     const tr = document.createElement("tr");
     if (r.name === latest) tr.className = "latest";
-    tr.innerHTML = `<td>${i + 1}</td><td>${r.name}</td><td>${fmt(r.caseTime)}</td><td>${fmt(r.split)}</td>`;
+    tr.innerHTML = `<td>${i + 1}</td><td class="pic">${PLL_DIAGRAMS[r.name]}</td><td>${r.name}</td><td>${fmt(r.caseTime)}</td><td>${fmt(r.split)}</td>`;
     return tr;
   });
   for (const name of PLL_NAMES) {
     if (attack.isDone(name)) continue;
     const tr = document.createElement("tr");
     tr.className = "pending";
-    tr.innerHTML = `<td></td><td>${name}</td><td>–</td><td>–</td>`;
+    tr.innerHTML = `<td></td><td class="pic">${PLL_DIAGRAMS[name]}</td><td>${name}</td><td>–</td><td>–</td>`;
     rows.push(tr);
   }
   $("rows").replaceChildren(...rows);

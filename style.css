@@ -16,16 +16,19 @@ button:disabled { opacity: .4; cursor: default; }
 button.primary { background: #ff8a00; border-color: #ff8a00; color: #fff; }
 button.primary:hover { background: #ff9d2e; }
 
-.table { flex: 0 0 300px; overflow-y: auto; }
+.table { flex: 0 0 360px; overflow-y: auto; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
 th { position: sticky; top: 0; background: #16181d; text-align: left; font-weight: 600; opacity: .7; padding: 6px 8px; border-bottom: 1px solid #2d313b; }
 td { padding: 4px 8px; border-bottom: 1px solid #22252c; }
-th:nth-child(n+3), td:nth-child(n+3) { text-align: right; }
+th:nth-child(n+3), td:nth-child(n+4) { text-align: right; }
+td.pic { width: 60px; padding: 3px 4px 3px 0; line-height: 0; }
+.pll-diagram { width: 60px; height: 60px; display: block; }
 td:first-child { opacity: .5; width: 2em; }
 tr.pending td { opacity: .35; }
+tr.pending td.pic { opacity: .8; }
 tr.pending td:first-child { opacity: .2; }
 tr.latest td { background: #2b2410; }
-tr.latest td:nth-child(2) { color: #ff8a00; font-weight: 700; }
+tr.latest td:nth-child(3) { color: #ff8a00; font-weight: 700; }
 
 @media (max-width: 640px) {
   main { flex-direction: column; height: auto; }

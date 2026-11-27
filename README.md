@@ -2,7 +2,8 @@
 
 Do all 21 PLLs, in any order, on a smart cube. Each PLL is recognised automatically
 and timed; the table on the right lists them in the order you did them, with the
-time of the case and the running total.
+time of the case and the running total. Each row shows a picture of the case
+(yellow face and the top row of the sides, arrows where the pieces go).
 
 ## How it works
 
@@ -24,6 +25,7 @@ time of the case and the running total.
 | --- | --- |
 | `cube.js` | Facelet model of the cube (acubemy/Kociemba frame) |
 | `pll.js` | The 21 cases and the PLL recognition |
+| `diagram.js` | Top-view picture of each case (yellow face + side stickers, arrows) |
 | `attack.js` | Attack state machine: timer, splits, results |
 | `main.js`, `view.js`, `index.html`, `style.css` | UI, 3D cube (Three.js) |
 | `tests/` | `npm test` (Node 20+) |
