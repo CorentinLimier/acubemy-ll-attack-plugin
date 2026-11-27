@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { SOLVED, applyAlg } from "../cube.js";
-import { PLLS, toHostFrame } from "../pll.js";
+import { toHostFrame } from "../pll.js";
+import { ALGS } from "./algs.mjs";
 import { PllAttack } from "../attack.js";
 
 // What acubemy sends: quarter turns only, so "R2" arrives as "R R".
@@ -23,7 +24,7 @@ test("full attack in a shuffled order with AUFs, a repeat and an extra AUF", () 
   const attack = new PllAttack(SOLVED);
   assert.equal(attack.phase, "armed");
   const clock = { t: 1000 };
-  const order = [...PLLS].sort(() => Math.random() - 0.5);
+  const order = [...ALGS].sort(() => Math.random() - 0.5);
   const aufs = ["", "U", "U2", "U'"];
 
   const first = play(attack, `U ${order[0].alg}`, clock);
@@ -65,7 +66,7 @@ test("waits for a PLL state before arming, timer starts on the move after", () =
 test("restart", () => {
   const attack = new PllAttack(SOLVED);
   const clock = { t: 0 };
-  play(attack, PLLS[0].alg, clock);
+  play(attack, ALGS[0].alg, clock);
   assert.equal(attack.results.length, 1);
   attack.restart();
   assert.equal(attack.results.length, 0);
@@ -79,6 +80,6 @@ test("state-driven: start() on the move, update() with acubemy's facelets", () =
   const attack = new PllAttack(SOLVED);
   assert.equal(attack.start(500), true);
   assert.equal(attack.start(600), false);
-  const t = applyAlg(SOLVED, toHostFrame(PLLS.find((p) => p.name === "T").alg));
+  const t = applyAlg(SOLVED, toHostFrame(ALGS.find((p) => p.name === "T").alg));
   assert.deepEqual(attack.update(t, 2500), { type: "pll", result: { name: "T", caseTime: 2000, split: 2000 } });
 });

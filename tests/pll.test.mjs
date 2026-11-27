@@ -2,7 +2,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { SOLVED, applyAlg, isPllState } from "../cube.js";
-import { PLLS, identifyPll, toHostFrame } from "../pll.js";
+import { PLL_CASES, PLL_NAMES, caseFacelets, identifyPll, solvingPermutation, toHostFrame } from "../pll.js";
+import { ALGS } from "./algs.mjs";
 
 test("basic move identities", () => {
   for (const f of "URFDLB") assert.equal(applyAlg(SOLVED, `${f} ${f} ${f} ${f}`), SOLVED);
@@ -20,7 +21,7 @@ test("Kociemba layout: U turn moves F top row to L, R turn moves F right column 
 });
 
 test("every reference alg is a PLL from solved and is not an AUF", () => {
-  for (const { name, alg } of PLLS) {
+  for (const { name, alg } of ALGS) {
     const s = applyAlg(SOLVED, toHostFrame(alg));
     assert.ok(isPllState(s), `${name} leaves F2L/OLL broken`);
     assert.equal(identifyPll(SOLVED, s), name, `${name} is identified as ${identifyPll(SOLVED, s)}`);
@@ -30,7 +31,7 @@ test("every reference alg is a PLL from solved and is not an AUF", () => {
 test("the 21 cases plus AUF partition all 288 last-layer permutations", () => {
   const seen = new Set([SOLVED]);
   const queue = [SOLVED];
-  const gens = [...PLLS.map((p) => toHostFrame(p.alg)), "D"];
+  const gens = [...ALGS.map((p) => toHostFrame(p.alg)), "D"];
   while (queue.length) {
     const s = queue.pop();
     for (const g of gens) {
@@ -59,7 +60,7 @@ test("edge-only and corner-only cases move only edges / corners", () => {
   const cornerSides = [24, 26, 15, 17, 51, 53, 42, 44];
   // Mark every sticker uniquely, apply alg + every post-AUF.
   const marked = Array.from({ length: 54 }, (_, i) => String.fromCharCode(48 + i)).join("");
-  for (const { name, alg } of PLLS) {
+  for (const { name, alg } of ALGS) {
     const results = ["", "D", "D2", "D'"].map((auf) => applyAlg(marked, `${toHostFrame(alg)} ${auf}`));
     const edgesFixed = results.some((r) => edgeSides.every((i) => r[i] === marked[i]));
     const cornersFixed = results.some((r) => cornerSides.every((i) => r[i] === marked[i]));
@@ -84,4 +85,22 @@ test("detection is independent of AUF, the starting state and y rotations", () =
   // Ja done with a different alg than the reference: R' U L' U2 R U' R' U2 R L
   const ja = applyAlg(start, toHostFrame("R' U L' U2 R U' R' U2 R L"));
   assert.equal(identifyPll(start, ja), "Ja");
+});
+
+test("case patterns: each is a valid PLL state that its known alg solves (up to AUF)", () => {
+  assert.deepEqual(PLL_NAMES, ALGS.map((a) => a.name));
+  assert.equal(new Set(Object.values(PLL_CASES)).size, 21);
+  for (const { name, alg } of ALGS) {
+    const state = caseFacelets(name);
+    assert.ok(isPllState(state), name);
+    solvingPermutation(state); // throws if a piece doesn't exist or appears twice
+    const solved = ["", "D", "D2", "D'"].some((auf) => applyAlg(state, `${toHostFrame(alg)} ${auf}`) === SOLVED);
+    assert.ok(solved, `${alg} doesn't solve ${name}`);
+  }
+});
+
+test("a broken pattern is rejected", () => {
+  const bad = SOLVED.split("");
+  bad[16] = bad[25]; // two identical edges
+  assert.throws(() => solvingPermutation(bad.join("")));
 });

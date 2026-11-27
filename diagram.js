@@ -1,5 +1,5 @@
-import { SOLVED, STICKERS, algPermutation } from "./cube.js";
-import { PLLS, toHostFrame } from "./pll.js";
+import { STICKERS } from "./cube.js";
+import { PLL_NAMES, caseFacelets } from "./pll.js";
 
 // Top view of a PLL case as the player holds the cube (yellow on top, green
 // in front): the yellow face and, around it, the top row of each side face.
@@ -23,12 +23,10 @@ function cellOf({ pos, normal }) {
 }
 
 const LAST_LAYER = STICKERS.map((s, i) => ({ ...s, i, cell: cellOf(s) })).filter((s) => s.pos[1] === -1 && s.normal[1] <= 0);
-const YELLOW_FACE = LAST_LAYER.filter((s) => s.normal[1] === -1);
 
-function render(perm) {
-  // The case is the state the alg solves: sticker i shows what perm brings to it.
+function render(facelets) {
   const stickers = LAST_LAYER.map(({ i, cell }) => {
-    const color = COLORS[SOLVED[perm[i]]];
+    const color = COLORS[facelets[i]];
     return `<rect x="${OFFSETS[cell.col]}" y="${OFFSETS[cell.row]}" width="${SIZES[cell.col]}" height="${SIZES[cell.row]}" rx="1.2" fill="${color}"/>`;
   });
 
@@ -38,22 +36,5 @@ ${stickers.join("")}
 </svg>`;
 }
 
-// Draw each case in the AUF orientation that moves the fewest pieces (the
-// usual textbook picture: e.g. T with headlights on the left); ties go to the
-// fewest extra turns.
-const AUF = [["", 0], ["D", 1], ["D'", 1], ["D2", 2]];
-function canonical(alg) {
-  let best = null;
-  for (const [pre, preCost] of AUF) {
-    for (const [post, postCost] of AUF) {
-      const perm = algPermutation(`${pre} ${toHostFrame(alg)} ${post}`);
-      const moved = YELLOW_FACE.filter(({ i }) => perm[i] !== i).length;
-      const cost = moved * 10 + preCost + postCost;
-      if (!best || cost < best.cost) best = { perm, cost };
-    }
-  }
-  return best.perm;
-}
-
 /** SVG markup of each case, by name. */
-export const PLL_DIAGRAMS = Object.fromEntries(PLLS.map(({ name, alg }) => [name, render(canonical(alg))]));
+export const PLL_DIAGRAMS = Object.fromEntries(PLL_NAMES.map((name) => [name, render(caseFacelets(name))]));

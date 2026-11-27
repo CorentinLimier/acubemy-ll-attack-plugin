@@ -61,7 +61,7 @@ for (const face of FACES) {
 }
 
 /** First p, then q. */
-function compose(p, q) {
+export function compose(p, q) {
   return p.map((dest) => q[dest]);
 }
 
