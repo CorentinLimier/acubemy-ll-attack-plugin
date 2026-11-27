@@ -135,6 +135,7 @@ test("OLL attack: all 57 in a shuffled order, from whatever state the last one l
   const attack = new Attack(MODES.OLL, SOLVED);
   const clock = { t: 0 };
   const order = shuffle(OLL_ALGS, 2);
+  attack.order = order.map((o) => o.name); // the player dragged the table into this order
   order.forEach(({ name, alg }, i) => {
     clock.t += 1000; // a pause between algs: two algs in a row are not one case
     play(attack, `${["", "U", "U2", "U'"][i % 4]} ${alg}`, clock);
@@ -178,6 +179,42 @@ test("OLL attack: an alg that solves F2L halfway counts as one case when done in
   const later = { t: 10000 };
   assert.deepEqual(play(done, oll3, later).map((e) => e.type), ["case", "case"]);
   assert.deepEqual(done.results.map((r) => r.name), ["3", "44", "45"]);
+});
+
+test("OLL attack: one case or two? The earliest case of the planned order wins", () => {
+  // OLL 18 is OLL 7, U2, OLL 8: F2L is solved after OLL 7.
+  const fused = `${OLL_ALGS[6].alg} U2 ${OLL_ALGS[7].alg}`;
+  const run = (order) => {
+    const attack = new Attack(MODES.OLL, SOLVED);
+    attack.order = [...order, ...MODES.OLL.names.filter((n) => !order.includes(n))];
+    const clock = { t: 0 };
+    play(attack, fused, clock);
+    const first = attack.results.map((r) => r.name);
+    clock.t += 2000;
+    play(attack, fused, clock);
+    return [first, attack.results.map((r) => r.name)];
+  };
+  assert.deepEqual(run(["7", "8", "18"]), [["7", "8"], ["7", "8", "18"]]);
+  assert.deepEqual(run(["18", "7", "8"]), [["18"], ["18", "7", "8"]]);
+  // 7 before 18 before 8: 7 then 8 still wins (7 is the earliest).
+  assert.deepEqual(run(["7", "18", "8"])[0], ["7", "8"]);
+  // Already done parts don't count: 7 done, then 8 alone vs 18, 18 first.
+  const attack = new Attack(MODES.OLL, SOLVED);
+  attack.order = ["7", "18", "8", ...MODES.OLL.names.filter((n) => !["7", "8", "18"].includes(n))];
+  const clock = { t: 0 };
+  play(attack, OLL_ALGS[6].alg, clock);
+  clock.t += 2000;
+  play(attack, fused, clock);
+  assert.deepEqual(attack.results.map((r) => r.name), ["7", "18"]);
+});
+
+test("the planned order is kept for each attack, across restarts", () => {
+  const attack = new Attack(MODES.OLL, SOLVED);
+  attack.order = ["57", ...MODES.OLL.names.slice(0, 56)];
+  attack.restart(SOLVED, MODES.PLL);
+  assert.deepEqual(attack.order, MODES.PLL.names);
+  attack.restart(SOLVED, MODES.OLL);
+  assert.equal(attack.order[0], "57");
 });
 
 test("PLL attack: two PLLs in a row are never merged", () => {

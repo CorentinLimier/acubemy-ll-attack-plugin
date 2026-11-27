@@ -28,9 +28,13 @@ screen at the end (for PLL). The order is kept until the plugin is closed
 - **OLL**: whenever F2L is solved again, the plugin works out from where each
   piece went which orientation the alg solves, whatever the state you started
   from, so you can chain OLLs without solving the last layer in between. A PLL
-  or an AUF doesn't count. Some OLL algs solve F2L halfway (OLL 3 is OLL 44,
-  U', OLL 45; OLL 41 and 42 start with a Sune): if the alg goes on within half
-  a second, both parts count as one case. Pause longer between two algs.
+  or an AUF doesn't count.
+- Some OLL algs solve F2L halfway: OLL 18 is OLL 7, U2, OLL 8 (also OLL 2,
+  3, 4, 41, 42…). If the alg goes on within half a second, it can be one case
+  (18) or two (7 and 8): the plugin picks the one that ticks the case that
+  comes first in your table among those still to do. With 7, 8, 18 in that
+  order, doing 7 + 8 ticks 7 and 8, and doing it again ticks 18; with 18
+  first, it's the other way round. Pause longer between two separate algs.
 - Each solved case is celebrated: its name and case time pop over the 3D cube
   with a burst of sparks, and its row flashes in the table. Finishing them all
   gets a bigger one. With "reduce motion" on, it's a plain fade.

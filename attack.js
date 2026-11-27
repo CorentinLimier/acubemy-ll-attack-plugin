@@ -5,10 +5,10 @@ import { OLL_NAMES, identifyOll } from "./oll.js";
 /**
  * What each attack drills: its cases, the states it starts each case from
  * (`isBaseline`) and how it tells which case took one such state to the next.
- * `mergeMs`: some OLL algs are two shorter OLL algs in a row (OLL 3 is OLL 44,
- * U', OLL 45), so F2L is solved in the middle of them. When the alg goes on
- * within `mergeMs` of such a state, the two parts count as one case, if that
- * case is still to do.
+ * `mergeMs`: some OLL algs are two shorter OLL algs in a row (OLL 18 is OLL 7,
+ * U2, OLL 8), so F2L is solved in the middle of them. When the alg goes on
+ * within `mergeMs` of such a state, it is either two cases or one: the plugin
+ * picks the one that gets the earliest case of the planned order still to do.
  */
 export const MODES = {
   PLL: { title: "PLL", names: PLL_NAMES, isBaseline: isPllState, identify: identifyPll, baseline: "F2L and the yellow face" },
@@ -25,7 +25,17 @@ export const MODES = {
  */
 export class Attack {
   constructor(mode = MODES.PLL, facelets = SOLVED) {
+    this.orders = {}; // planned order of the cases, by attack: kept across restarts
     this.restart(facelets, mode);
+  }
+
+  /** The planned order of the current attack's cases (the player can drag them). */
+  get order() {
+    return (this.orders[this.mode.title] ??= [...this.mode.names]);
+  }
+
+  set order(names) {
+    this.orders[this.mode.title] = names;
   }
 
   /** Clear the attack and wait for the first move, from `facelets` (default: the current state). */
@@ -89,9 +99,13 @@ export class Attack {
 
     const last = this.last;
     if (last?.goesOn) {
+      // Two cases (the last one and this one) or one (the whole alg)?
       const whole = this.mode.identify(last.from, facelets);
       const counted = last.counted ? this.results.at(-1) : null;
-      if (whole && !this.results.some((r) => r.name === whole && r !== counted)) {
+      const toDo = (n) => !this.results.some((r) => r.name === n && r !== counted);
+      const rank = (n) => this.order.indexOf(n);
+      const parts = [counted?.name, name].filter((n) => n && toDo(n));
+      if (whole && toDo(whole) && (!parts.length || rank(whole) < Math.min(...parts.map(rank)))) {
         if (counted) this.results.pop();
         before = last.from;
         name = whole;

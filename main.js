@@ -36,11 +36,9 @@ const label = (name) => (attack.mode === MODES.OLL ? `OLL ${name}` : name);
 
 // ---- rendering ------------------------------------------------------------
 
-// Planned order of the cases, for each attack: the player can drag them before
-// the attack starts. (The sandbox has no storage, so it lasts until the plugin
-// is closed.)
-const orders = Object.fromEntries(Object.entries(MODES).map(([key, mode]) => [key, [...mode.names]]));
-const order = () => orders[attack.mode.title];
+// The planned order of the cases (attack.order, one for each attack): the
+// player can drag them before the attack starts. (The sandbox has no storage,
+// so it lasts until the plugin is closed.)
 let sortable = null; // SortableJS instance, once loaded
 const canReorder = () => sortable !== null && (attack.phase === "waiting" || attack.phase === "armed");
 
@@ -92,7 +90,7 @@ function renderHeader() {
 function renderTable() {
   const reorder = canReorder();
   sortable?.option("disabled", !reorder);
-  const pending = order().filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
+  const pending = attack.order.filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
   const done = sortedResults().map(({ r, i }) => doneRow(r, i));
   $("rows").replaceChildren(...pending, ...done);
   flashLatest = false;
@@ -123,7 +121,7 @@ import("sortablejs")
       ghostClass: "dragging",
       scrollSensitivity: 80, // the sticky header covers the top of the list
       onEnd() {
-        orders[attack.mode.title] = [...$("rows").querySelectorAll("tr.pending")].map((r) => r.dataset.name);
+        attack.order = [...$("rows").querySelectorAll("tr.pending")].map((r) => r.dataset.name);
       },
     });
     renderTable();
@@ -136,7 +134,7 @@ $("rows").addEventListener("keydown", (e) => {
   if (!handle || !canReorder() || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
   e.preventDefault();
   const name = handle.closest("tr").dataset.name;
-  const order = orders[attack.mode.title];
+  const order = attack.order;
   const i = order.indexOf(name);
   const j = e.key === "ArrowUp" ? i - 1 : i + 1;
   if (j < 0 || j >= order.length) return;
