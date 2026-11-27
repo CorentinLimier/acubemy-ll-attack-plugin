@@ -1,10 +1,10 @@
-import { PLL_CASES } from "./pll.js";
+import { COLORS } from "./cube.js";
+import { COLOUR_TO_FACE, PLL_CASES } from "./pll.js";
 
 // Top view of a PLL case as the player holds the cube (yellow on top, green
 // in front): the yellow face and, around it, the top row of each side face,
 // drawn straight from the case's pattern in pll.js.
 
-const COLORS = { Y: "#ffd500", G: "#1fb84f", O: "#ff8a00", B: "#1e6bd6", R: "#e8283c" };
 
 const CELL = 10; // yellow face sticker
 const STRIP = 4; // side sticker depth
@@ -25,12 +25,12 @@ const RING_CELLS = [
 ];
 const YELLOW_CELLS = [1, 2, 3].flatMap((row) => [1, 2, 3].map((col) => [col, row]));
 
-const rect = ([col, row], colour) =>
-  `<rect x="${OFFSETS[col]}" y="${OFFSETS[row]}" width="${SIZES[col]}" height="${SIZES[row]}" rx="1.2" fill="${COLORS[colour]}"/>`;
+const rect = ([col, row], face) =>
+  `<rect x="${OFFSETS[col]}" y="${OFFSETS[row]}" width="${SIZES[col]}" height="${SIZES[row]}" rx="1.2" fill="${COLORS[face]}"/>`;
 
 function render(pattern) {
   const colours = pattern.replace(/ /g, "");
-  const stickers = [...YELLOW_CELLS.map((cell) => rect(cell, "Y")), ...RING_CELLS.map((cell, k) => rect(cell, colours[k]))];
+  const stickers = [...YELLOW_CELLS.map((cell) => rect(cell, "D")), ...RING_CELLS.map((cell, k) => rect(cell, COLOUR_TO_FACE[colours[k]]))];
   return `<svg class="pll-diagram" viewBox="-1 -1 ${TOTAL + 2} ${TOTAL + 2}" xmlns="http://www.w3.org/2000/svg">
 <rect x="-1" y="-1" width="${TOTAL + 2}" height="${TOTAL + 2}" rx="2" fill="#0d0e11"/>
 ${stickers.join("")}

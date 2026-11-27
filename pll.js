@@ -38,7 +38,8 @@ export function toHostFrame(alg) {
   return alg.replace(/[URFDLB]/g, (f) => Z2[f]);
 }
 
-const COLOUR_TO_FACE = { G: "F", O: "L", B: "B", R: "R" };
+/** Pattern colour letter -> acubemy face letter. */
+export const COLOUR_TO_FACE = { G: "F", O: "L", B: "B", R: "R" };
 
 /** acubemy facelets of a case: solved cube with the case's last layer. */
 export function caseFacelets(name) {

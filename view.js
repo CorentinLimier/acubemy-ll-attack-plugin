@@ -1,8 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { STICKERS } from "./cube.js";
+import { COLORS, STICKERS } from "./cube.js";
 
-const COLORS = { U: 0xffffff, R: 0xe8283c, F: 0x1fb84f, D: 0xffd500, L: 0xff8a00, B: 0x1e6bd6 };
 const AXES = {
   U: new THREE.Vector3(0, 1, 0),
   D: new THREE.Vector3(0, -1, 0),
@@ -66,7 +65,7 @@ export function createCubeView(container) {
   });
 
   function paint(facelets) {
-    for (let i = 0; i < 54; i++) stickers[i].material.color.setHex(COLORS[facelets[i]]);
+    for (let i = 0; i < 54; i++) stickers[i].material.color.set(COLORS[facelets[i]]);
   }
 
   // ---- layer turn animation -------------------------------------------------

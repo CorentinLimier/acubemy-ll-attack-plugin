@@ -7,6 +7,9 @@
 const FACES = "URFDLB";
 export const SOLVED = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
 
+/** Sticker colours by face letter, shared by the 3D cube and the case pictures. */
+export const COLORS = { U: "#ffffff", R: "#e8283c", F: "#1fb84f", D: "#ffd500", L: "#ff8a00", B: "#1e6bd6" };
+
 const NORMALS = {
   U: [0, 1, 0],
   R: [1, 0, 0],
