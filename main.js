@@ -1,4 +1,4 @@
-import { applyMove } from "./cube.js";
+import { COLORS, applyMove } from "./cube.js";
 import { PLL_NAMES, toHostFrame } from "./pll.js";
 import { PllAttack, isResetGesture } from "./attack.js";
 import { PLL_DIAGRAMS } from "./diagram.js";
@@ -145,11 +145,36 @@ function tick() {
 
 const standalone = window.parent === window;
 
+// A short reward when a PLL is done: the case name pops over the cube with
+// its time and a burst of cube-coloured sparks, and the timer pulses.
+// Animations are in style.css; each celebration replaces the previous one.
+function celebrate(title, time, sparks, big = false) {
+  const pop = document.createElement("div");
+  pop.className = big ? "pop big" : "pop";
+  pop.innerHTML = `<div class="pop-name">${title}</div><div class="pop-time">${time}</div>`;
+  const colors = Object.values(COLORS);
+  const burst = Array.from({ length: sparks }, (_, i) => {
+    const spark = document.createElement("span");
+    spark.className = "spark";
+    const angle = (i / sparks) * 2 * Math.PI + Math.random() * 0.4;
+    const distance = 80 + Math.random() * 70;
+    spark.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+    spark.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+    spark.style.setProperty("--rot", `${Math.round(Math.random() * 360)}deg`);
+    spark.style.setProperty("--color", colors[i % colors.length]);
+    return spark;
+  });
+  $("celebrate").replaceChildren(pop, ...burst);
+  $("timer").animate([{ transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 300, easing: "ease-out" });
+}
+
 function handleEvent(event) {
   if (event?.type === "pll" || event?.type === "finish") {
     latest = event.result.name;
-    status = { text: `${event.result.name}  ${fmt(event.result.caseTime)}`, warn: false };
+    status = { text: "", warn: false }; // the celebration shows the case and its time
     renderTable();
+    if (event.type === "pll") celebrate(event.result.name, fmt(event.result.caseTime), 14);
+    else celebrate(`All ${PLL_NAMES.length}!`, fmt(event.result.split), 36, true);
   }
   if (event?.type === "repeat") status = { text: `${event.name} already done, it doesn't count`, warn: true };
   renderStatus();
