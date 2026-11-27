@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PLL Attack</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/gh/acubemy/plugin-sdk@1/v1.js"></script>
+</head>
+<body>
+  <main>
+    <section class="play">
+      <p id="device" class="muted">No cube connected</p>
+      <div id="view"></div>
+      <div id="timer">0.00</div>
+      <p id="progress" class="muted">0 / 21</p>
+      <p id="status"></p>
+      <div class="buttons">
+        <button id="restart" class="primary">Restart PLL attack</button>
+        <button id="calibrate" title="Hold the cube white on top, green in front, then click">Reset gyro</button>
+      </div>
+    </section>
+    <section class="table">
+      <table>
+        <thead>
+          <tr><th>#</th><th>PLL</th><th>Case</th><th>Total</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+  </main>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

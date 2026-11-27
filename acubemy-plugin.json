@@ -1,0 +1,10 @@
+{
+  "sdk": 1,
+  "id": "pll-attack",
+  "name": "PLL Attack",
+  "author": "Corentin Limier",
+  "version": "0.1.0",
+  "description": "Do all 21 PLLs in any order: each one is detected automatically and timed, with splits.",
+  "entry": "index.html",
+  "permissions": ["moves", "gyro", "state"]
+}

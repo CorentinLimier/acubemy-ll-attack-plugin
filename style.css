@@ -1,0 +1,34 @@
+html, body { margin: 0; height: 100%; background: #16181d; color: #eee; font-family: system-ui, -apple-system, sans-serif; }
+main { height: 100%; display: flex; gap: 16px; padding: 16px; box-sizing: border-box; }
+
+.play { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+#view { width: 100%; max-width: 360px; flex: 0 1 300px; min-height: 160px; }
+#view canvas { width: 100%; height: 100%; display: block; }
+#timer { font: 700 56px/1 ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+#timer.finished { color: #3ddc84; }
+#status { min-height: 1.4em; margin: 0; font-weight: 600; }
+#status.warn { color: #ffb347; }
+.muted { margin: 0; opacity: .65; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+button { font: inherit; font-size: 14px; padding: 8px 16px; border: 1px solid #3a3e48; border-radius: 999px; background: #23262e; color: #eee; cursor: pointer; }
+button:hover:not(:disabled) { background: #2d313b; }
+button:disabled { opacity: .4; cursor: default; }
+button.primary { background: #ff8a00; border-color: #ff8a00; color: #fff; }
+button.primary:hover { background: #ff9d2e; }
+
+.table { flex: 0 0 300px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+th { position: sticky; top: 0; background: #16181d; text-align: left; font-weight: 600; opacity: .7; padding: 6px 8px; border-bottom: 1px solid #2d313b; }
+td { padding: 4px 8px; border-bottom: 1px solid #22252c; }
+th:nth-child(n+3), td:nth-child(n+3) { text-align: right; }
+td:first-child { opacity: .5; width: 2em; }
+tr.pending td { opacity: .35; }
+tr.pending td:first-child { opacity: .2; }
+tr.latest td { background: #2b2410; }
+tr.latest td:nth-child(2) { color: #ff8a00; font-weight: 700; }
+
+@media (max-width: 640px) {
+  main { flex-direction: column; height: auto; }
+  .table { flex: none; }
+  #timer { font-size: 44px; }
+}
