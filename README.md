@@ -22,8 +22,7 @@ no storage).
   last layer with the previous such state and finds which PLL took it there
   (pre- and post-AUF, `y` rotations, wide and slice moves all work: only the
   result counts). Pure AUFs are ignored, and a case already done doesn't count.
-- **Reset gyro**: hold the cube white on top, green in front, then click.
-- **Restart PLL attack**: clears times and results.
+- **Restart**: clears times and results.
 
 ## Files
 

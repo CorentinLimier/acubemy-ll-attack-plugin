@@ -11,8 +11,7 @@ main { height: 100%; display: flex; gap: 16px; padding: 16px; box-sizing: border
 .muted { margin: 0; opacity: .65; }
 .buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
 button { font: inherit; font-size: 14px; padding: 8px 16px; border: 1px solid #3a3e48; border-radius: 999px; background: #23262e; color: #eee; cursor: pointer; }
-button:hover:not(:disabled) { background: #2d313b; }
-button:disabled { opacity: .4; cursor: default; }
+button:hover { background: #2d313b; }
 button.primary { background: #ff8a00; border-color: #ff8a00; color: #fff; }
 button.primary:hover { background: #ff9d2e; }
 

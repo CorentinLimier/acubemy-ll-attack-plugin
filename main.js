@@ -179,7 +179,6 @@ acubemy.onReady(() => handleState(acubemy.getFacelets()));
 
 function renderDevice() {
   $("device").textContent = device.connected ? device.deviceName ?? "Cube connected" : "No cube connected";
-  $("calibrate").disabled = !device.hasGyro;
   if (!device.hasGyro) view?.setQuaternion(null);
 }
 acubemy.onDeviceChange((d) => {
@@ -199,8 +198,6 @@ $("restart").addEventListener("click", () => {
   status = { text: "", warn: false };
   renderAll();
 });
-
-$("calibrate").addEventListener("click", () => acubemy.calibrateGyro());
 
 renderDevice();
 renderAll();
