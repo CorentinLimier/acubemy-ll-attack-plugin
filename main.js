@@ -49,23 +49,60 @@ function pendingRow(name, reorder) {
   return tr;
 }
 
+let flashLatest = false; // flash the latest row once, when its PLL is solved (not on re-sorts)
+
 function doneRow(r, i) {
   const tr = document.createElement("tr");
-  if (r.name === latest) tr.className = "latest";
+  if (r.name === latest) tr.className = flashLatest ? "latest flash" : "latest";
   tr.innerHTML = `<td class="idx">${i + 1}</td><td class="name" colspan="2">${r.name}</td><td class="time">${fmt(r.caseTime)}</td><td class="time">${fmt(r.split)}</td>`;
   return tr;
 }
 
-// Cases still to do on top (with their picture), then the done ones, most
-// recent first: the first PLL done ends up at the bottom.
+// Done cases are listed newest first (Total, descending): the first PLL done
+// ends up at the bottom. Once the drill is finished, the headers sort them.
+const DEFAULT_SORT = { key: "split", dir: "desc" };
+let sort = DEFAULT_SORT;
+
+function sortedResults() {
+  const rows = attack.results.map((r, i) => ({ r, i }));
+  const { key, dir } = sort;
+  const compare = key === "name" ? (a, b) => a.r.name.localeCompare(b.r.name) : (a, b) => a.r[key] - b.r[key];
+  rows.sort((a, b) => (dir === "asc" ? compare(a, b) : compare(b, a)));
+  return rows;
+}
+
+function renderHeader() {
+  const finished = attack.phase === "finished";
+  for (const button of document.querySelectorAll(".sort")) {
+    button.disabled = !finished;
+    const th = button.closest("th");
+    // # and Total share the same order: only Total shows the arrow.
+    const active = finished && button.dataset.key === sort.key && !("noArrow" in button.dataset);
+    if (active) th.setAttribute("aria-sort", sort.dir === "asc" ? "ascending" : "descending");
+    else th.removeAttribute("aria-sort");
+  }
+}
+
+// Cases still to do on top (with their picture), then the done ones.
 function renderTable() {
   const reorder = canReorder();
   sortable?.option("disabled", !reorder);
   const pending = order.filter((name) => !attack.isDone(name)).map((name) => pendingRow(name, reorder));
-  const done = attack.results.map(doneRow).reverse();
+  const done = sortedResults().map(({ r, i }) => doneRow(r, i));
   $("rows").replaceChildren(...pending, ...done);
+  flashLatest = false;
   $("progress").textContent = `${attack.results.length} / ${PLL_NAMES.length}`;
+  renderHeader();
 }
+
+// Click a header: sort by it (A to Z / fastest first), or flip the direction.
+document.querySelector("thead").addEventListener("click", (e) => {
+  const button = e.target.closest(".sort");
+  if (!button || button.disabled) return;
+  const key = button.dataset.key;
+  sort = key === sort.key ? { key, dir: sort.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" };
+  renderTable();
+});
 
 // ---- reordering -------------------------------------------------------------
 // Drag (mouse and touch, with autoscroll) by SortableJS. Optional like the 3D
@@ -172,6 +209,7 @@ function handleEvent(event) {
   if (event?.type === "pll" || event?.type === "finish") {
     latest = event.result.name;
     status = { text: "", warn: false }; // the celebration shows the case and its time
+    flashLatest = true;
     renderTable();
     if (event.type === "pll") celebrate(event.result.name, fmt(event.result.caseTime), 14);
     else celebrate(`All ${PLL_NAMES.length}!`, fmt(event.result.split), 36, true);
@@ -236,6 +274,7 @@ function restart() {
   attack.restart();
   recentMoves = [];
   latest = null;
+  sort = DEFAULT_SORT;
   status = { text: "", warn: false };
   $("celebrate").replaceChildren(); // stop a celebration still playing
   renderAll();

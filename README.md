@@ -9,7 +9,8 @@ attack starts you can drag them (⠿) into the order you plan to do them in.
 Done cases move below, without their picture, with the time of the case and the
 running total; the first one done is at the bottom, so the full table fits on
 screen at the end. The order is kept until the plugin is closed (plugins have
-no storage).
+no storage). Once all 21 are done, click a column header (PLL, Case, Total) to
+sort the results; click it again to reverse.
 
 ## How it works
 
