@@ -80,9 +80,13 @@ tr.dragging td:first-child { box-shadow: inset 3px 0 0 #ff8a00; }
   tr.latest.flash td { animation: none; }
 }
 
+/* Phones: the page fits the screen. The table keeps room for its header and
+   the first two cases with their picture (2 x 111px) and scrolls; the cube
+   gets what is left. */
 @media (max-width: 640px) {
-  body { height: auto; }
-  main { flex-direction: column; }
-  .table { flex: none; }
+  main { flex-direction: column; gap: 8px; }
+  .play { flex: 0 1 auto; min-height: 0; gap: 4px; }
+  .stage { flex: 1 1 300px; min-height: 0; }
+  .table { flex: 1 0 256px; }
   #timer { font-size: 44px; }
 }
