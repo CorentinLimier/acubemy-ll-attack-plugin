@@ -3,7 +3,7 @@
   "id": "pll-time-attack",
   "name": "PLL Time Attack",
   "author": "Corentin Limier",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Do all 21 PLLs in any order: each one is detected automatically and timed",
   "entry": "index.html",
   "permissions": ["moves", "gyro", "state"]
