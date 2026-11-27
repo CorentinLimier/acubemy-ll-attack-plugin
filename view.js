@@ -78,16 +78,14 @@ export function createCubeView(container) {
   function startNextTurn(now) {
     const next = queue.shift();
     if (!next) return;
-    const face = next.move[0];
-    const axis = AXES[face];
-    const quarters = next.move.includes("2") ? 2 : 1;
-    const sign = next.move.includes("'") ? 1 : -1; // clockwise seen from the face = negative angle
+    const axis = AXES[next.move[0]];
+    // acubemy sends quarter turns only. Clockwise seen from the face = negative angle.
     turn = {
       axis,
-      angle: sign * quarters * (Math.PI / 2),
+      angle: next.move.includes("'") ? Math.PI / 2 : -Math.PI / 2,
       layer: cubies.filter((c) => c.userData.home.dot(axis) > 0.5),
       start: now,
-      duration: Math.max(MIN_TURN_MS, TURN_MS / (1 + queue.length)) * (quarters === 2 ? 1.5 : 1),
+      duration: Math.max(MIN_TURN_MS, TURN_MS / (1 + queue.length)),
       facelets: next.facelets,
     };
   }
