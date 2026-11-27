@@ -1,7 +1,7 @@
 {
   "sdk": 1,
-  "id": "pll-oll-time-attack",
-  "name": "PLL & OLL Time Attack",
+  "id": "ll-time-attack",
+  "name": "Last Layer Time Attack",
   "author": "Corentin Limier",
   "version": "0.3.0",
   "description": "Do all 21 PLLs or all 57 OLLs in any order: each one is detected automatically and timed",

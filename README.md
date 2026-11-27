@@ -1,4 +1,4 @@
-# PLL & OLL Time Attack — acubemy plugin
+# Last Layer Time Attack — acubemy plugin
 
 Do all 21 PLLs or all 57 OLLs, in any order, on a smart cube. Each case is
 recognised automatically and timed. Pick the attack with the **PLL / OLL** tabs
