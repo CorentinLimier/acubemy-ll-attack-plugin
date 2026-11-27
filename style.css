@@ -33,7 +33,7 @@ tr.latest td.name { color: #ff8a00; font-weight: 700; }
 .hint { margin: 0 0 6px; font-size: 13px; opacity: .65; }
 .grip { font-size: 15px; }
 .handle { padding: 4px 6px; border: 0; border-radius: 6px; background: none; color: #8a8f9c; font-size: 18px; line-height: 1; cursor: grab; touch-action: none; }
-.handle:hover:not(:disabled) { background: #2d313b; color: #eee; }
+.handle:hover { background: #2d313b; color: #eee; }
 .handle:focus-visible { outline: 2px solid #ff8a00; }
 tr.dragging td { background: #262a33; }
 tr.dragging td:first-child { box-shadow: inset 3px 0 0 #ff8a00; }
