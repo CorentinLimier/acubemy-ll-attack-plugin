@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { COLORS, STICKERS } from "./cube.js";
+import { COLORS, STICKERS, applyMove } from "./cube.js";
 
 const AXES = {
   U: new THREE.Vector3(0, 1, 0),
@@ -172,11 +172,11 @@ export function createCubeView(container) {
       paint(facelets);
       wake();
     },
-    /** Animate a quarter turn (acubemy's frame, e.g. "R'"), ending on `facelets`. */
-    animateMove(move, facelets) {
-      if (!AXES[move[0]]) return this.setFacelets(facelets);
-      latest = facelets;
-      queue.push({ move, facelets });
+    /** Animate a quarter turn (acubemy's frame, e.g. "R'") from the state the view ends on. */
+    animateMove(move) {
+      if (!latest || !AXES[move[0]]) return;
+      latest = applyMove(latest, move);
+      queue.push({ move, facelets: latest });
       wake();
     },
     /** Gyro orientation, or null for the default view. */

@@ -11,11 +11,12 @@ import { PLL_NAMES, identifyPll } from "./pll.js";
  */
 export class PllAttack {
   constructor(facelets = SOLVED) {
-    this.facelets = facelets;
-    this.restart();
+    this.restart(facelets);
   }
 
-  restart() {
+  /** Clear the attack and wait for the first move, from `facelets` (default: the current state). */
+  restart(facelets = this.facelets) {
+    this.facelets = facelets;
     this.results = []; // { name, caseTime, split } in solve order
     this.startTime = null;
     this.endTime = null;
@@ -50,13 +51,9 @@ export class PllAttack {
    */
   update(facelets, now) {
     this.facelets = facelets;
-    if (this.phase === "finished") return null;
-    if (!isPllState(facelets)) {
-      // Not started yet (e.g. the plugin opened on the SDK's default solved
-      // cube, then acubemy's real state arrived): wait for a PLL state again.
-      if (this.startTime === null) this.baseline = null;
-      return null;
-    }
+    // A state in the middle of an alg changes nothing, even before the timer
+    // starts: acubemy can send the state of a move before the move itself.
+    if (this.phase === "finished" || !isPllState(facelets)) return null;
 
     const before = this.baseline;
     this.baseline = facelets;
@@ -77,4 +74,19 @@ export class PllAttack {
     }
     return { type: "pll", result };
   }
+}
+
+// acubemy resets the gyro or the cube state when the same U or D quarter turn
+// is done four times in a row (U4, D4). The plugin restarts the attack on it.
+const RESET_GESTURE_MS = 2000; // the four turns must be this quick
+
+/** True when the last 4 of `moves` ({ move, time }) are U4 or D4 (all U, all U', all D or all D'). */
+export function isResetGesture(moves) {
+  const last = moves.slice(-4);
+  return (
+    last.length === 4 &&
+    /^[UD]'?$/.test(last[0].move) &&
+    last.every((m) => m.move === last[0].move) &&
+    last[3].time - last[0].time <= RESET_GESTURE_MS
+  );
 }

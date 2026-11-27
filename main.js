@@ -1,6 +1,6 @@
 import { applyMove } from "./cube.js";
 import { PLL_NAMES, toHostFrame } from "./pll.js";
-import { PllAttack } from "./attack.js";
+import { PllAttack, isResetGesture } from "./attack.js";
 import { PLL_DIAGRAMS } from "./diagram.js";
 
 const $ = (id) => document.getElementById(id);
@@ -139,8 +139,9 @@ function tick() {
 // *before* it stores the new facelets, so getFacelets() inside onMove would
 // still give the old state: we read the new one in onStateChange instead.
 // Both fire in the same message, so a PLL is timed at the move that ends it.
-// The view animates each move from onMove (attack.facelets is still the state
-// before it) and ignores the matching state change that follows.
+// acubemy may send a move's new state before or after the move itself, so
+// nothing here depends on that order: the view animates each move from what it
+// shows, and acubemy's state is applied to it shortly after, only if it differs.
 
 const standalone = window.parent === window;
 
@@ -155,14 +156,19 @@ function handleEvent(event) {
   renderTimer();
 }
 
+let viewSync = 0;
 function handleState(facelets, now = performance.now()) {
   const event = attack.update(facelets, now);
-  view?.setFacelets(facelets); // no-op when it's the state the move animation ends on
+  // Let the matching move arrive first; then no-op unless the view disagrees.
+  clearTimeout(viewSync);
+  viewSync = setTimeout(() => view?.setFacelets(attack.facelets), 150);
   handleEvent(event);
 }
 
+let recentMoves = []; // the last 4 moves, to spot the U4 / D4 reset gesture
+
 function handleMove(move, now = performance.now()) {
-  view?.animateMove(move, applyMove(attack.facelets, move));
+  view?.animateMove(move);
   if (attack.start(now)) {
     status = { text: "", warn: false };
     renderTable(); // drag handles go away once the attack has started
@@ -171,11 +177,19 @@ function handleMove(move, now = performance.now()) {
   }
   // Opened directly in a browser, acubemy sends no state: simulate it.
   if (standalone) handleState(applyMove(attack.facelets, move), now);
+
+  recentMoves = [...recentMoves, { move, time: now }].slice(-4);
+  if (isResetGesture(recentMoves)) restart();
 }
 
 acubemy.onMove(({ move }) => handleMove(move));
 acubemy.onStateChange((facelets) => handleState(facelets));
-acubemy.onReady(() => handleState(acubemy.getFacelets()));
+// The plugin can start before acubemy has sent the cube state (the SDK then
+// reports a solved cube): take the real state once it arrives.
+acubemy.onReady(() => {
+  if (attack.phase === "waiting" || attack.phase === "armed") attack.restart(acubemy.getFacelets());
+  renderAll();
+});
 
 function renderDevice() {
   $("device").textContent = device.connected ? device.deviceName ?? "Cube connected" : "No cube connected";
@@ -192,12 +206,16 @@ acubemy.onGyro((q) => {
 
 // ---- buttons --------------------------------------------------------------
 
-$("restart").addEventListener("click", () => {
+// Restart button, or U4 / D4 on the cube (acubemy's reset gesture).
+function restart() {
   attack.restart();
+  recentMoves = [];
   latest = null;
   status = { text: "", warn: false };
   renderAll();
-});
+}
+
+$("restart").addEventListener("click", restart);
 
 renderDevice();
 renderAll();

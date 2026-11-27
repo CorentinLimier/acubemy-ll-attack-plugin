@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { SOLVED, applyAlg, applyMove } from "../cube.js";
 import { toHostFrame } from "../pll.js";
 import { ALGS } from "./algs.mjs";
-import { PllAttack } from "../attack.js";
+import { PllAttack, isResetGesture } from "../attack.js";
 
 // What acubemy sends: quarter turns only, so "R2" arrives as "R R".
 function quarterTurns(alg) {
@@ -84,11 +84,18 @@ test("restart", () => {
   assert.equal(attack.phase, "waiting");
 });
 
-test("a scrambled state before the start disarms the attack", () => {
+test("acubemy may send a move's state before the move: the timer still starts", () => {
+  const attack = new PllAttack(SOLVED);
+  assert.equal(attack.update(applyAlg(SOLVED, "L"), 100), null); // state of the first move...
+  assert.equal(attack.phase, "armed");
+  assert.equal(attack.start(100), true); // ...then the move itself
+  assert.equal(attack.phase, "running");
+});
+
+test("restart(facelets) takes acubemy's real state when it arrives", () => {
   // The plugin can open on the SDK's default solved cube, then get acubemy's real state.
   const attack = new PllAttack(SOLVED);
-  assert.equal(attack.phase, "armed");
-  attack.update(applyAlg(SOLVED, "R U F"), 0);
+  attack.restart(applyAlg(SOLVED, "R U F"));
   assert.equal(attack.phase, "waiting");
   assert.equal(attack.start(10), false); // turning a scrambled cube doesn't start the timer
   const tPerm = applyAlg(SOLVED, toHostFrame(ALGS.find((p) => p.name === "T").alg));
@@ -111,4 +118,15 @@ test("state-driven: start() on the move, update() with acubemy's facelets", () =
   assert.equal(attack.start(600), false);
   const t = applyAlg(SOLVED, toHostFrame(ALGS.find((p) => p.name === "T").alg));
   assert.deepEqual(attack.update(t, 2500), { type: "pll", result: { name: "T", caseTime: 2000, split: 2000 } });
+});
+
+test("reset gesture: U4 or D4 in one direction, within 2 seconds", () => {
+  const moves = (list, gap = 200) => list.map((move, i) => ({ move, time: 1000 + i * gap }));
+  assert.ok(isResetGesture(moves(["U", "U", "U", "U"])));
+  assert.ok(isResetGesture(moves(["D'", "D'", "D'", "D'"])));
+  assert.ok(isResetGesture(moves(["R", "U", "U", "U", "U"]))); // only the last 4 count
+  assert.ok(!isResetGesture(moves(["U", "U", "U"])));
+  assert.ok(!isResetGesture(moves(["U", "U", "U'", "U"]))); // mixed directions
+  assert.ok(!isResetGesture(moves(["R", "R", "R", "R"]))); // other faces
+  assert.ok(!isResetGesture(moves(["U", "U", "U", "U"], 1000))); // 3 s: too slow
 });
