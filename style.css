@@ -1,5 +1,5 @@
 html, body { margin: 0; height: 100%; background: #16181d; color: #eee; font-family: system-ui, -apple-system, sans-serif; }
-body { display: flex; flex-direction: column; }
+body { display: flex; flex-direction: column; --pic: 104px; /* case picture size */ }
 main { flex: 1; min-height: 0; display: flex; gap: 16px; padding: 0 16px 16px; box-sizing: border-box; }
 
 .tabs { display: flex; justify-content: center; gap: 4px; padding: 12px 16px; }
@@ -39,8 +39,8 @@ th[aria-sort="ascending"] .sort::after { content: " ▲"; font-size: 10px; }
 th[aria-sort="descending"] .sort::after { content: " ▼"; font-size: 10px; }
 td.idx { opacity: .5; width: 2em; }
 td.handle-cell { width: 2em; padding: 0 0 0 2px; }
-td.pic { width: 104px; padding: 3px 4px 3px 0; line-height: 0; }
-.case-diagram { width: 104px; height: 104px; display: block; }
+td.pic { width: var(--pic); padding: 3px 4px 3px 0; line-height: 0; }
+.case-diagram { width: var(--pic); height: var(--pic); display: block; }
 tr.pending td.name { opacity: .85; }
 tr.pending td.time { opacity: .3; }
 tr.latest td { background: #2b2410; }
@@ -81,12 +81,16 @@ tr.dragging td:first-child { box-shadow: inset 3px 0 0 #ff8a00; }
 }
 
 /* Phones: the page fits the screen. The table keeps room for its header and
-   the first two cases with their picture (2 x 111px) and scrolls; the cube
-   gets what is left. */
+   the first two cases with their picture, and scrolls; the cube gets what is
+   left. On short screens the pictures shrink with the cube, never bigger than
+   it: the rest of the page (tabs, texts, buttons, table header) takes about
+   280px, the rest is the cube's area plus two rows (picture + 7px), and a
+   picture is kept at 0.3 x (that - 14px), about 80% of the cube's area. */
 @media (max-width: 640px) {
+  body { --pic: clamp(40px, (100dvh - 292px) * 0.3, 104px); }
   main { flex-direction: column; gap: 8px; }
   .play { flex: 0 1 auto; min-height: 0; gap: 4px; }
   .stage { flex: 1 1 300px; min-height: 0; }
-  .table { flex: 1 0 256px; }
+  .table { flex: 1 0 calc(34px + 2 * (var(--pic) + 7px)); }
   #timer { font-size: 44px; }
 }
