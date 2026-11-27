@@ -21,13 +21,22 @@ table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nu
 th { position: sticky; top: 0; z-index: 1; background: #16181d; text-align: left; font-weight: 600; opacity: .7; padding: 6px 8px; border-bottom: 1px solid #2d313b; }
 td { padding: 3px 8px; border-bottom: 1px solid #22252c; }
 .time { text-align: right; }
+/* Header buttons: plain text during the drill, sortable once it's finished. */
+.sort { all: unset; }
+.sort:enabled { cursor: pointer; }
+.sort:enabled:hover { color: #fff; }
+.sort:focus-visible { outline: 2px solid #ff8a00; outline-offset: 2px; border-radius: 3px; }
+th[aria-sort] .sort { color: #ff8a00; }
+th[aria-sort="ascending"] .sort::after { content: " ▲"; font-size: 10px; }
+th[aria-sort="descending"] .sort::after { content: " ▼"; font-size: 10px; }
 td.idx { opacity: .5; width: 2em; }
 td.handle-cell { width: 2em; padding: 0 0 0 2px; }
 td.pic { width: 78px; padding: 3px 4px 3px 0; line-height: 0; }
 .pll-diagram { width: 78px; height: 78px; display: block; }
 tr.pending td.name { opacity: .85; }
 tr.pending td.time { opacity: .3; }
-tr.latest td { background: #2b2410; animation: row-flash 1.2s ease-out; }
+tr.latest td { background: #2b2410; }
+tr.latest.flash td { animation: row-flash 1.2s ease-out; }
 tr.latest td.name { color: #ff8a00; font-weight: 700; }
 
 .handle { padding: 4px 6px; border: 0; border-radius: 6px; background: none; color: #8a8f9c; font-size: 18px; line-height: 1; cursor: grab; touch-action: none; }
@@ -60,7 +69,7 @@ tr.dragging td:first-child { box-shadow: inset 3px 0 0 #ff8a00; }
   .spark { display: none; }
   .pop { animation: fade 1.2s forwards; }
   @keyframes fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
-  tr.latest td { animation: none; }
+  tr.latest.flash td { animation: none; }
 }
 
 @media (max-width: 640px) {

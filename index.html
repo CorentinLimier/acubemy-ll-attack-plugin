@@ -34,7 +34,12 @@
     <section class="table">
       <table>
         <thead>
-          <tr><th>#</th><th colspan="2">PLL</th><th class="time">Case</th><th class="time">Total</th></tr>
+          <tr>
+            <th><button class="sort" data-key="split" data-no-arrow disabled>#</button></th>
+            <th colspan="2"><button class="sort" data-key="name" disabled>PLL</button></th>
+            <th class="time"><button class="sort" data-key="caseTime" disabled>Case</button></th>
+            <th class="time"><button class="sort" data-key="split" disabled>Total</button></th>
+          </tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
