@@ -1,4 +1,5 @@
 {
+  "name": "acubemy-ll-attack-plugin",
   "private": true,
   "type": "module",
   "scripts": {

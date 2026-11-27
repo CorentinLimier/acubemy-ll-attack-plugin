@@ -1,10 +1,10 @@
 import { COLORS } from "./cube.js";
 import { COLOUR_TO_FACE, PLL_CASES } from "./pll.js";
+import { OLL_CASES } from "./oll.js";
 
-// Top view of a PLL case as the player holds the cube (yellow on top, green
-// in front): the yellow face and, around it, the top row of each side face,
-// drawn straight from the case's pattern in pll.js.
-
+// Top view of a case as the player holds the cube (yellow on top, green in
+// front): the top face and, around it, the top row of each side face, drawn
+// straight from the case's pattern in pll.js or oll.js.
 
 const CELL = 10; // yellow face sticker
 const STRIP = 4; // side sticker depth
@@ -23,19 +23,30 @@ const RING_CELLS = [
   [3, 4], [2, 4], [1, 4],
   [0, 3], [0, 2], [0, 1],
 ];
-const YELLOW_CELLS = [1, 2, 3].flatMap((row) => [1, 2, 3].map((col) => [col, row]));
+const TOP_CELLS = [1, 2, 3].flatMap((row) => [1, 2, 3].map((col) => [col, row]));
 
-const rect = ([col, row], face) =>
-  `<rect x="${OFFSETS[col]}" y="${OFFSETS[row]}" width="${SIZES[col]}" height="${SIZES[row]}" rx="1.2" fill="${COLORS[face]}"/>`;
+const CELLS = [...TOP_CELLS, ...RING_CELLS];
 
-function render(pattern) {
-  const colours = pattern.replace(/ /g, "");
-  const stickers = [...YELLOW_CELLS.map((cell) => rect(cell, "D")), ...RING_CELLS.map((cell, k) => rect(cell, COLOUR_TO_FACE[colours[k]]))];
-  return `<svg class="pll-diagram" viewBox="-1 -1 ${TOTAL + 2} ${TOTAL + 2}" xmlns="http://www.w3.org/2000/svg">
+const rect = ([col, row], fill) =>
+  `<rect x="${OFFSETS[col]}" y="${OFFSETS[row]}" width="${SIZES[col]}" height="${SIZES[row]}" rx="1.2" fill="${fill}"/>`;
+
+/** `fills`: a colour for each top cell (row by row), then each side sticker (in pattern order). */
+function render(fills) {
+  const stickers = CELLS.map((cell, k) => rect(cell, fills[k]));
+  return `<svg class="case-diagram" viewBox="-1 -1 ${TOTAL + 2} ${TOTAL + 2}" xmlns="http://www.w3.org/2000/svg">
 <rect x="-1" y="-1" width="${TOTAL + 2}" height="${TOTAL + 2}" rx="2" fill="#0d0e11"/>
 ${stickers.join("")}
 </svg>`;
 }
 
-/** SVG markup of each case, by name. */
-export const PLL_DIAGRAMS = Object.fromEntries(Object.entries(PLL_CASES).map(([name, pattern]) => [name, render(pattern)]));
+const pictures = (cases, fills) =>
+  Object.fromEntries(Object.entries(cases).map(([name, pattern]) => [name, render(fills([...pattern]))]));
+
+// PLL: the yellow face, and the side colours.
+const pll = (ring) => [...TOP_CELLS.map(() => COLORS.D), ...ring.map((c) => COLORS[COLOUR_TO_FACE[c]])];
+// OLL: only which stickers are yellow; the others are grey.
+const NOT_YELLOW = "#4a4e58";
+const oll = (mask) => mask.map((c) => (c === "x" ? COLORS.D : NOT_YELLOW));
+
+/** SVG markup of each case, by attack (as in MODES) and case name. */
+export const DIAGRAMS = { PLL: pictures(PLL_CASES, pll), OLL: pictures(OLL_CASES, oll) };

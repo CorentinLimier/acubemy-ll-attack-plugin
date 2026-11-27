@@ -1,9 +1,9 @@
 // Run with: node --test tests/*.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SOLVED, applyAlg, isPllState } from "../cube.js";
-import { PLL_CASES, PLL_NAMES, caseFacelets, identifyPll, solvingPermutation, toHostFrame } from "../pll.js";
-import { ALGS } from "./algs.mjs";
+import { SOLVED, applyAlg, isPllState, solvingPermutation, toHostFrame } from "../cube.js";
+import { PLL_CASES, PLL_NAMES, caseFacelets, identifyPll } from "../pll.js";
+import { PLL_ALGS as ALGS } from "./algs.mjs";
 
 test("basic move identities", () => {
   for (const f of "URFDLB") assert.equal(applyAlg(SOLVED, `${f} ${f} ${f} ${f}`), SOLVED);
