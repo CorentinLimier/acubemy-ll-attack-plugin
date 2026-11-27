@@ -83,11 +83,9 @@ const CASE_PERMUTATIONS = PLL_NAMES.map((name) => {
 
 /**
  * Which PLL takes PLL state `before` to PLL state `after`?
- * Returns a case name, "AUF" when only the yellow layer was turned, or null
- * when nothing matches (should not happen between two PLL states).
+ * Returns a case name, or null when only the yellow layer was turned (AUF).
  */
 export function identifyPll(before, after) {
-  if (AUF.some((p) => applyPermutation(before, p) === after)) return "AUF";
   for (const { name, perms } of CASE_PERMUTATIONS) {
     if (perms.some((p) => applyPermutation(before, p) === after)) return name;
   }

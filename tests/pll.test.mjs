@@ -34,8 +34,7 @@ test("the 21 cases plus AUF partition all 288 last-layer permutations", () => {
   assert.equal(seen.size, 288);
   const counts = {};
   for (const s of seen) {
-    const name = identifyPll(SOLVED, s);
-    assert.ok(name, "unclassified state");
+    const name = identifyPll(SOLVED, s) ?? "AUF";
     counts[name] = (counts[name] || 0) + 1;
   }
   assert.equal(Object.keys(counts).length, 22);

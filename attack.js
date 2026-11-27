@@ -58,7 +58,7 @@ export class PllAttack {
     if (!before || this.startTime === null) return null;
 
     const name = identifyPll(before, facelets);
-    if (!name || name === "AUF") return null;
+    if (!name) return null; // only an AUF
     if (this.isDone(name)) return { type: "repeat", name };
 
     const last = this.results.length ? this.results[this.results.length - 1].split : 0;
