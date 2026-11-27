@@ -237,6 +237,7 @@ function restart() {
   recentMoves = [];
   latest = null;
   status = { text: "", warn: false };
+  $("celebrate").replaceChildren(); // stop a celebration still playing
   renderAll();
 }
 

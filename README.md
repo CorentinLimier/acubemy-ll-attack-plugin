@@ -22,6 +22,9 @@ no storage).
   last layer with the previous such state and finds which PLL took it there
   (pre- and post-AUF, `y` rotations, wide and slice moves all work: only the
   result counts). Pure AUFs are ignored, and a case already done doesn't count.
+- Each solved PLL is celebrated: its name and case time pop over the 3D cube
+  with a burst of sparks, and its row flashes in the table. Finishing all 21
+  gets a bigger one. With "reduce motion" on, it's a plain fade.
 - **Restart**: clears times and results. Doing U4 or D4 on the cube (the same
   U or D turn four times within 2 seconds, acubemy's reset gesture) restarts too.
 
