@@ -37,3 +37,7 @@ npx serve --cors .
 Then open acubemy → **Games & Plugins → Developer mode** and enter `http://localhost:3000`.
 Opened directly in a browser, you can play algs from the console (yellow on top):
 `pllAttack.play("R U R' U' R' F R2 U' R' U' R U R' F'")`.
+
+## License
+
+MIT
