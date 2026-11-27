@@ -1,4 +1,4 @@
-import { SOLVED, applyMove, isPllState } from "./cube.js";
+import { SOLVED, isPllState } from "./cube.js";
 import { PLL_NAMES, identifyPll } from "./pll.js";
 
 /**
@@ -70,12 +70,5 @@ export class PllAttack {
       return { type: "finish", result };
     }
     return { type: "pll", result };
-  }
-
-  /** start() + update() with our own move simulation: for tests and for use without acubemy. */
-  move(move, now) {
-    const started = this.start(now);
-    const event = this.update(applyMove(this.facelets, move), now);
-    return event ?? (started ? { type: "start" } : null);
   }
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SOLVED, applyAlg } from "../cube.js";
+import { SOLVED, applyAlg, applyMove } from "../cube.js";
 import { toHostFrame } from "../pll.js";
 import { ALGS } from "./algs.mjs";
 import { PllAttack } from "../attack.js";
@@ -10,11 +10,17 @@ function quarterTurns(alg) {
   return alg.trim().split(/\s+/).flatMap((m) => (m.endsWith("2") ? [m[0], m[0]] : [m]));
 }
 
+// What the plugin does for each move: start() on the move, update() with the new state.
+function step(attack, move, now) {
+  attack.start(now);
+  return attack.update(applyMove(attack.facelets, move), now);
+}
+
 function play(attack, alg, clock) {
   const events = [];
   for (const m of quarterTurns(toHostFrame(alg))) {
     clock.t += 100;
-    const e = attack.move(m, clock.t);
+    const e = step(attack, m, clock.t);
     if (e) events.push(e);
   }
   return events;
@@ -28,9 +34,8 @@ test("full attack in a shuffled order with AUFs, a repeat and an extra AUF", () 
   const aufs = ["", "U", "U2", "U'"];
 
   const first = play(attack, `U ${order[0].alg}`, clock);
-  assert.equal(first[0].type, "start");
   assert.equal(attack.startTime, 1100);
-  assert.equal(first.at(-1).result.name, order[0].name);
+  assert.deepEqual(first.map((e) => e.result.name), [order[0].name]);
 
   // Repeating a done case does not count.
   const repeat = play(attack, order[0].alg, clock);
@@ -50,7 +55,7 @@ test("full attack in a shuffled order with AUFs, a repeat and an extra AUF", () 
   assert.equal(sum, attack.results.at(-1).split);
   assert.equal(attack.elapsed(999999), attack.endTime - attack.startTime);
   // Moves after the end are tracked but change nothing.
-  assert.equal(attack.move("R", clock.t + 1), null);
+  assert.equal(step(attack, "R", clock.t + 1), null);
 });
 
 test("waits for a PLL state before arming, timer starts on the move after", () => {
@@ -58,9 +63,12 @@ test("waits for a PLL state before arming, timer starts on the move after", () =
   const attack = new PllAttack(scrambled);
   assert.equal(attack.phase, "waiting");
   const clock = { t: 0 };
-  for (const m of ["F'", "U'", "R'"]) assert.equal(attack.move(m, (clock.t += 10)), null);
+  for (const m of ["F'", "U'", "R'"]) assert.equal(step(attack, m, (clock.t += 10)), null);
   assert.equal(attack.phase, "armed");
-  assert.equal(play(attack, "U", clock)[0].type, "start");
+  assert.equal(attack.startTime, null);
+  play(attack, "U", clock);
+  assert.equal(attack.phase, "running");
+  assert.equal(attack.startTime, clock.t);
 });
 
 test("restart", () => {
